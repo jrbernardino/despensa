@@ -261,25 +261,19 @@
     try {
       if (!detector && !(await initDetector())) throw new Error("sin motor");
       const constraints = {
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 960 } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 }, height: { ideal: 1440 },
+          advanced: [{ focusMode: "continuous" }]
+        },
         audio: false
       };
       running = true;
 
-      if (engine === "zxing") {
-        // ZXing tiene que abrir la cámara él mismo: si le pasamos un video
-        // que ya está reproduciéndose, se queda esperando un evento pasado.
-        zxControls = await detector.decodeFromConstraints(constraints, video, (result) => {
-          attempts++; $("dTries").textContent = attempts;
-          if (running && result) accept(result.getText(), String(result.getBarcodeFormat()).toLowerCase());
-        });
-        stream = video.srcObject;
-      } else {
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream;
-        await video.play();
-        loopNative();
-      }
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+      await video.play();
+      engine === "zxing" ? loopCrop() : loopNative();
       track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
 
       idle.hidden = true; reticle.hidden = false;
@@ -321,6 +315,30 @@
         if (hits.length) accept(hits[0].rawValue, hits[0].format);
       } catch (_) {}
       setTimeout(tick, 220);
+    };
+    tick();
+  }
+
+  // Safari: recorta solo la banda de la mira y la amplía 2x antes de decodificar.
+  // Analizar el cuadro completo desperdicia ciclos en etiqueta borrosa.
+  function loopCrop() {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const tick = () => {
+      if (!running) return;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (vw && vh) {
+        const sw = Math.floor(vw * 0.84), sh = Math.floor(vh * 0.34);
+        const sx = Math.floor((vw - sw) / 2), sy = Math.floor((vh - sh) / 2);
+        canvas.width = sw * 2; canvas.height = sh * 2;
+        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+        attempts++; $("dTries").textContent = attempts;
+        try {
+          const r = detector.decodeFromCanvas(canvas);
+          if (r) accept(r.getText(), String(r.getBarcodeFormat()).toLowerCase());
+        } catch (_) { /* NotFoundException en cada cuadro sin código */ }
+      }
+      setTimeout(tick, 140);
     };
     tick();
   }
