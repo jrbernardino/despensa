@@ -158,6 +158,7 @@
       <dt>Origen seguro (HTTPS)</dt><dd id="dSecure">—</dd>
       <dt>Motor de lectura</dt><dd id="dEngine">—</dd>
       <dt>Formatos soportados</dt><dd id="dFormats">—</dd>
+      <dt>Intentos de lectura</dt><dd id="dTries">0</dd>
     </dl>
   </section>
 
@@ -197,7 +198,7 @@
   const WANTED = ["ean_13","ean_8","upc_a","upc_e","code_128","itf"];
   const entries = [];
   let stream = null, track = null, detector = null, engine = null;
-  let running = false, torchOn = false;
+  let running = false, torchOn = false, zxControls = null, attempts = 0;
   let lastCode = "", lastAt = 0;
 
   /* ---------- diagnóstico ---------- */
@@ -231,16 +232,17 @@
         s.onload = res; s.onerror = rej;
         document.head.appendChild(s);
       });
+      const H = ZXing.DecodeHintType;
       const hints = new Map();
-      hints.set(2 /* POSSIBLE_FORMATS */, [
+      hints.set(H.POSSIBLE_FORMATS, [
         ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
-        ZXing.BarcodeFormat.UPC_A,  ZXing.BarcodeFormat.UPC_E,
-        ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.ITF
+        ZXing.BarcodeFormat.UPC_A,  ZXing.BarcodeFormat.UPC_E
       ]);
-      detector = new ZXing.BrowserMultiFormatReader(hints);
+      hints.set(H.TRY_HARDER, true);
+      detector = new ZXing.BrowserMultiFormatReader(hints, 250);
       engine = "zxing";
       $("dEngine").textContent = "ZXing (respaldo)";
-      $("dFormats").textContent = "6 de 6";
+      $("dFormats").textContent = "4 de 4 (EAN/UPC)";
       return true;
     } catch (_) {
       $("dEngine").textContent = "No disponible";
@@ -258,20 +260,32 @@
     btnStart.textContent = "Iniciando…";
     try {
       if (!detector && !(await initDetector())) throw new Error("sin motor");
-      stream = await navigator.mediaDevices.getUserMedia({
+      const constraints = {
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 960 } },
         audio: false
-      });
-      video.srcObject = stream;
-      await video.play();
-      track = stream.getVideoTracks()[0];
-
+      };
       running = true;
+
+      if (engine === "zxing") {
+        // ZXing tiene que abrir la cámara él mismo: si le pasamos un video
+        // que ya está reproduciéndose, se queda esperando un evento pasado.
+        zxControls = await detector.decodeFromConstraints(constraints, video, (result) => {
+          attempts++; $("dTries").textContent = attempts;
+          if (running && result) accept(result.getText(), String(result.getBarcodeFormat()).toLowerCase());
+        });
+        stream = video.srcObject;
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        await video.play();
+        loopNative();
+      }
+      track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+
       idle.hidden = true; reticle.hidden = false;
       btnStart.textContent = "Apagar cámara";
-      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      const caps = track && track.getCapabilities ? track.getCapabilities() : {};
       btnTorch.disabled = !("torch" in caps);
-      engine === "zxing" ? loopZXing() : loopNative();
     } catch (err) {
       alertEl.innerHTML = '<div class="alert">No se pudo abrir la cámara: ' + (err && err.name ? err.name : "error") + '. Revisa el permiso de cámara del sitio.</div>';
       btnStart.textContent = "Encender cámara";
@@ -281,7 +295,9 @@
 
   function stop() {
     running = false; torchOn = false;
-    if (engine === "zxing" && detector && detector.reset) detector.reset();
+    if (zxControls && zxControls.stop) { try { zxControls.stop(); } catch (_) {} }
+    zxControls = null;
+    if (detector && detector.reset) { try { detector.reset(); } catch (_) {} }
     if (stream) stream.getTracks().forEach(t => t.stop());
     stream = null; track = null; video.srcObject = null;
     idle.hidden = false; reticle.hidden = true;
@@ -300,18 +316,13 @@
     const tick = async () => {
       if (!running) return;
       try {
+        attempts++; $("dTries").textContent = attempts;
         const hits = await detector.detect(video);
         if (hits.length) accept(hits[0].rawValue, hits[0].format);
       } catch (_) {}
       setTimeout(tick, 220);
     };
     tick();
-  }
-
-  function loopZXing() {
-    detector.decodeFromVideoElement(video, (result) => {
-      if (running && result) accept(result.getText(), String(result.getBarcodeFormat()).toLowerCase());
-    }).catch(() => {});
   }
 
   /* ---------- registro ---------- */
