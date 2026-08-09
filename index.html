@@ -4,136 +4,94 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14110E">
-<title>Prueba de lectura · Despensa</title>
+<title>Compra · Despensa</title>
 <style>
   :root{
-    --paper:#E9E6DF;
-    --paper-2:#DFDBD2;
-    --ink:#14110E;
-    --muted:#8A857C;
-    --rule:#C6C1B6;
-    --well:#0B0A09;
-    --ok:#1F6B3A;
-    --miss:#B03A1F;
-    --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --paper:#E9E6DF; --paper-2:#DFDBD2; --ink:#14110E;
+    --muted:#8A857C; --rule:#C6C1B6; --well:#0B0A09;
+    --ok:#1F6B3A; --miss:#B03A1F;
+    --mono: ui-monospace,"SF Mono","Roboto Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
-  body{
-    background:var(--paper-2);
-    color:var(--ink);
-    font-family:var(--mono);
-    font-size:15px;
-    line-height:1.45;
-    -webkit-font-smoothing:antialiased;
-    padding:14px 12px 40px;
-    display:flex;justify-content:center;
-  }
-  .tape{
-    width:100%;max-width:520px;
-    background:var(--paper);
-    padding:22px 18px 26px;
-    box-shadow:0 1px 0 rgba(0,0,0,.12), 0 10px 30px rgba(0,0,0,.10);
-    position:relative;
-  }
-  /* borde troquelado tipo tira de ticket */
-  .tape::before,.tape::after{
-    content:"";position:absolute;left:0;right:0;height:8px;
-    background:radial-gradient(circle at 5px 0, transparent 0 5px, var(--paper) 5px);
-    background-size:10px 8px;
-  }
-  .tape::before{top:-7px;transform:scaleY(-1)}
-  .tape::after{bottom:-7px}
+  body{background:var(--paper-2);color:var(--ink);font-family:var(--mono);
+    font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;
+    padding:0 10px 30px;display:flex;justify-content:center}
+  .tape{width:100%;max-width:520px;background:var(--paper);padding:0 16px 24px;
+    box-shadow:0 10px 30px rgba(0,0,0,.10);min-height:100vh}
 
-  header{text-align:center;border-bottom:1px dashed var(--rule);padding-bottom:14px}
-  h1{
-    font-size:15px;font-weight:700;margin:0;
-    letter-spacing:.22em;text-transform:uppercase;
-  }
-  .sub{color:var(--muted);font-size:11.5px;letter-spacing:.08em;margin-top:6px}
+  .top{position:sticky;top:0;background:var(--paper);z-index:20;
+    padding:14px 0 12px;border-bottom:2px solid var(--ink)}
+  .total{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .total b{font-size:38px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .total span{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .bar{height:5px;background:var(--paper-2);margin-top:10px}
+  .bar i{display:block;height:100%;background:var(--ok);width:0}
+  .bar i.over{background:var(--miss)}
+  .subline{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px}
 
   section{border-bottom:1px dashed var(--rule);padding:14px 0}
-  .eyebrow{
-    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
-    color:var(--muted);margin-bottom:10px;
-  }
+  .eyebrow{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
 
-  .well{
-    background:var(--well);aspect-ratio:4/3;width:100%;
-    position:relative;overflow:hidden;display:grid;place-items:center;
-  }
+  .well{background:var(--well);aspect-ratio:4/3;width:100%;position:relative;overflow:hidden;display:grid;place-items:center}
   video{width:100%;height:100%;object-fit:cover;display:block}
-  .reticle{
-    position:absolute;left:8%;right:8%;top:34%;height:32%;
-    border:1px solid rgba(255,255,255,.45);
-    box-shadow:0 0 0 2000px rgba(0,0,0,.30);
-    pointer-events:none;
-  }
-  .reticle span{
-    position:absolute;left:0;right:0;top:50%;height:1px;
-    background:var(--miss);opacity:.9;
-  }
-  .idle{color:#6E6960;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:0 20px;text-align:center}
+  .reticle{position:absolute;left:8%;right:8%;top:33%;height:34%;
+    border:1px solid rgba(255,255,255,.5);box-shadow:0 0 0 2000px rgba(0,0,0,.28);pointer-events:none}
+  .reticle i{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--miss)}
+  .idle{color:#6E6960;font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;padding:0 18px}
 
-  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-  button{
-    font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+  .row{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+  button{font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
     background:var(--ink);color:var(--paper);border:1px solid var(--ink);
-    padding:11px 14px;cursor:pointer;flex:1 1 auto;min-height:44px;
-  }
+    padding:12px 14px;cursor:pointer;flex:1 1 auto;min-height:46px}
   button.ghost{background:transparent;color:var(--ink)}
-  button:disabled{opacity:.35;cursor:not-allowed}
+  button.danger{background:transparent;color:var(--miss);border-color:var(--miss)}
+  button:disabled{opacity:.35}
   button:focus-visible{outline:3px solid var(--miss);outline-offset:2px}
-
-  input{
-    font-family:var(--mono);font-size:15px;padding:11px 12px;flex:2 1 160px;
-    border:1px solid var(--rule);background:#fff;color:var(--ink);min-height:44px;
-  }
+  input{font-family:var(--mono);font-size:16px;padding:12px;border:1px solid var(--rule);
+    background:#fff;color:var(--ink);min-height:46px;width:100%}
   input:focus-visible{outline:3px solid var(--miss);outline-offset:1px}
+  label{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .half{display:flex;gap:8px}.half>div{flex:1}
 
-  dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:12.5px}
-  dt{color:var(--muted)}
-  dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
-
-  .tally{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
-  .tally b{display:block;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
-  .tally span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  /* panel de captura de precio */
+  .sheet{position:fixed;inset:0;background:rgba(20,17,14,.55);z-index:50;display:none;align-items:flex-end}
+  .sheet.on{display:flex}
+  .sheet .card{background:var(--paper);width:100%;max-width:520px;margin:0 auto;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+  .prod{font-size:17px;font-weight:700;margin-bottom:2px;word-break:break-word}
+  .barcode{font-size:12px;color:var(--muted);letter-spacing:.05em;margin-bottom:14px}
+  .qty{display:flex;align-items:center;gap:10px}
+  .qty button{flex:0 0 52px;font-size:20px;padding:0;min-height:46px}
+  .qty b{flex:1;text-align:center;font-size:20px;font-variant-numeric:tabular-nums}
 
   ol{list-style:none;margin:0;padding:0}
-  li{padding:10px 0;border-bottom:1px dotted var(--rule)}
-  li:last-child{border-bottom:0}
-  .line{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-  .code{font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.04em}
-  .stamp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:2px 6px;border:1px solid;white-space:nowrap}
-  .stamp.ok{color:var(--ok);border-color:var(--ok)}
-  .stamp.miss{color:var(--miss);border-color:var(--miss)}
-  .stamp.wait{color:var(--muted);border-color:var(--muted)}
-  .meta{color:var(--muted);font-size:11.5px;margin-top:3px;display:flex;justify-content:space-between;gap:10px}
-  .name{font-size:13px;margin-top:3px}
-
-  .empty{color:var(--muted);font-size:12.5px;text-align:center;padding:16px 6px}
-  .note{color:var(--muted);font-size:11.5px;margin-top:10px}
+  li{padding:11px 0;border-bottom:1px dotted var(--rule);display:flex;gap:10px;align-items:flex-start}
+  li>div:first-child{flex:1;min-width:0}
+  .nm{font-size:13.5px;word-break:break-word}
+  .mt{font-size:11px;color:var(--muted);margin-top:2px}
+  .amt{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;text-align:right}
+  .x{background:none;border:0;color:var(--miss);font-size:18px;padding:0 4px;min-height:auto;flex:0 0 auto;cursor:pointer}
+  .flag{color:var(--miss);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+  .empty{color:var(--muted);font-size:12.5px;text-align:center;padding:18px 6px}
+  .note{color:var(--muted);font-size:11.5px;margin-top:9px}
+  .alert{background:var(--miss);color:#fff;padding:10px 12px;font-size:12.5px;margin-top:9px}
   footer{text-align:center;padding-top:16px;color:var(--muted);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase}
-  .alert{background:var(--miss);color:#fff;padding:10px 12px;font-size:12.5px;margin-top:10px}
-  @media (prefers-reduced-motion: no-preference){
-    .reticle span{animation:sweep 2.4s ease-in-out infinite}
-    @keyframes sweep{0%,100%{top:12%}50%{top:88%}}
-  }
 </style>
 </head>
 <body>
 <main class="tape">
 
-  <header>
-    <h1>Prueba de lectura</h1>
-    <div class="sub">Scanner EAN · cobertura de catálogo</div>
-  </header>
+  <div class="top">
+    <div class="total"><span>Total</span><b id="tTotal">$0.00</b></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="subline"><span id="tCount">0 artículos</span><span id="tLeft"></span></div>
+  </div>
 
   <section>
-    <div class="eyebrow">Cámara</div>
+    <div class="eyebrow">Escáner</div>
     <div class="well">
       <video id="video" playsinline muted></video>
-      <div class="reticle" id="reticle" hidden><span></span></div>
+      <div class="reticle" id="reticle" hidden><i></i></div>
       <div class="idle" id="idle">Cámara apagada</div>
     </div>
     <div class="row">
@@ -146,328 +104,285 @@
   <section>
     <div class="eyebrow">Captura manual</div>
     <div class="row">
-      <input id="manual" inputmode="numeric" placeholder="7501000110001" autocomplete="off">
-      <button id="btnManual" class="ghost">Buscar</button>
+      <input id="manual" inputmode="numeric" placeholder="Código, o escribe el producto" autocomplete="off">
     </div>
-    <div class="note">Sirve para probar la base de datos sin cámara: teclea el código impreso en el producto.</div>
+    <div class="row"><button id="btnManual" class="ghost">Agregar a mano</button></div>
   </section>
 
   <section>
-    <div class="eyebrow">Diagnóstico del equipo</div>
-    <dl>
-      <dt>Origen seguro (HTTPS)</dt><dd id="dSecure">—</dd>
-      <dt>Motor de lectura</dt><dd id="dEngine">—</dd>
-      <dt>Formatos soportados</dt><dd id="dFormats">—</dd>
-      <dt>Intentos de lectura</dt><dd id="dTries">0</dd>
-    </dl>
+    <div class="eyebrow">Artículos</div>
+    <ol id="list"></ol>
+    <div class="empty" id="listEmpty">Escanea el primer producto.</div>
   </section>
 
   <section>
-    <div class="eyebrow">Resultados</div>
-    <div class="tally">
-      <div><b id="tTotal">0</b><span>Leídos</span></div>
-      <div><b id="tFound">0</b><span>En base</span></div>
-      <div><b id="tRate">—</b><span>Cobertura</span></div>
+    <div class="eyebrow">Compra</div>
+    <div class="half">
+      <div><label for="store">Tienda</label><input id="store" placeholder="Chedraui" autocomplete="off"></div>
+      <div><label for="budget">Presupuesto</label><input id="budget" inputmode="decimal" placeholder="1500"></div>
     </div>
-  </section>
-
-  <section>
-    <div class="eyebrow">Bitácora</div>
-    <ol id="log"></ol>
-    <div class="empty" id="logEmpty">Escanea un producto para empezar.</div>
     <div class="row">
-      <button id="btnCopy" class="ghost" disabled>Copiar bitácora</button>
-      <button id="btnClear" class="ghost" disabled>Borrar</button>
+      <button id="btnCsv" class="ghost">Descargar CSV</button>
+      <button id="btnCopy" class="ghost">Copiar</button>
     </div>
+    <div class="row"><button id="btnReset" class="danger">Cerrar y vaciar</button></div>
+    <div class="note">Todo se guarda solo en este teléfono, en cada cambio. Puedes cerrar la pestaña sin perder nada.</div>
   </section>
 
-  <footer>Prototipo · sin base de datos</footer>
+  <footer>Captura de compra · v1</footer>
 </main>
+
+<div class="sheet" id="sheet">
+  <div class="card">
+    <div class="prod" id="sProd">—</div>
+    <div class="barcode" id="sCode">—</div>
+    <div id="sFlag"></div>
+    <label for="sPrice">Precio unitario</label>
+    <input id="sPrice" inputmode="decimal" placeholder="0.00">
+    <div style="margin-top:14px"><label>Cantidad</label>
+      <div class="qty">
+        <button id="sMinus" class="ghost">−</button>
+        <b id="sQty">1</b>
+        <button id="sPlus" class="ghost">+</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button id="sCancel" class="ghost">Cancelar</button>
+      <button id="sAdd">Agregar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (() => {
   "use strict";
-
   const $ = id => document.getElementById(id);
-  const video = $("video"), idle = $("idle"), reticle = $("reticle");
-  const btnStart = $("btnStart"), btnTorch = $("btnTorch");
-  const btnManual = $("btnManual"), manual = $("manual");
-  const btnCopy = $("btnCopy"), btnClear = $("btnClear");
-  const logEl = $("log"), logEmpty = $("logEmpty"), alertEl = $("alert");
+  const KEY = "despensa.compra.v1";
+  const video=$("video"), idle=$("idle"), reticle=$("reticle"), alertEl=$("alert");
+  const sheet=$("sheet");
 
-  const WANTED = ["ean_13","ean_8","upc_a","upc_e","code_128","itf"];
-  const entries = [];
-  let stream = null, track = null, detector = null, engine = null;
-  let running = false, torchOn = false, zxControls = null, attempts = 0;
-  let lastCode = "", lastAt = 0;
+  let state = { store:"", budget:"", items:[] };
+  let detector=null, stream=null, track=null, running=false, torchOn=false, wake=null;
+  let seenCode="", seenHits=0, lastAdded="", lastAddedAt=0;
+  let pending=null, pQty=1;
 
-  /* ---------- diagnóstico ---------- */
-  $("dSecure").textContent = window.isSecureContext ? "Sí" : "No";
-  if (!window.isSecureContext) {
-    alertEl.innerHTML = '<div class="alert">Esta página no corre en HTTPS, así que el navegador no dará acceso a la cámara. Publícala en GitHub Pages o ábrela desde localhost.</div>';
+  /* ---------- persistencia ---------- */
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(_){} }
+  function load(){
+    try{ const r=localStorage.getItem(KEY); if(r) state=Object.assign(state, JSON.parse(r)); }catch(_){}
+    $("store").value=state.store||""; $("budget").value=state.budget||"";
   }
 
-  async function initDetector() {
-    if ("BarcodeDetector" in window) {
-      let supported = [];
-      try { supported = await window.BarcodeDetector.getSupportedFormats(); } catch (_) {}
-      const formats = WANTED.filter(f => supported.includes(f));
-      if (formats.length) {
-        detector = new window.BarcodeDetector({ formats });
-        engine = "nativo";
-        $("dEngine").textContent = "BarcodeDetector nativo";
-        $("dFormats").textContent = formats.length + " de " + WANTED.length;
-        return true;
-      }
-    }
-    return loadFallback();
+  /* ---------- totales ---------- */
+  const money = n => "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  function totals(){
+    const t = state.items.reduce((s,i)=> s + i.price*i.qty, 0);
+    const n = state.items.reduce((s,i)=> s + i.qty, 0);
+    $("tTotal").textContent = money(t);
+    $("tCount").textContent = n + (n===1?" artículo":" artículos");
+    const b = parseFloat(String(state.budget).replace(",","."))||0;
+    const bar=$("bar");
+    if(b>0){
+      const pct=Math.min(t/b*100,100);
+      bar.style.width=pct+"%"; bar.classList.toggle("over", t>b);
+      $("tLeft").textContent = (t>b? "Excedido "+money(t-b) : "Restan "+money(b-t));
+    } else { bar.style.width="0"; $("tLeft").textContent=""; }
   }
 
-  async function loadFallback() {
-    $("dEngine").textContent = "Cargando respaldo…";
-    try {
-      await new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
+  /* ---------- lista ---------- */
+  function render(){
+    const list=$("list");
+    $("listEmpty").hidden = state.items.length>0;
+    list.replaceChildren(...state.items.map((it,idx)=>{
+      const li=document.createElement("li");
+      li.innerHTML='<div><div class="nm"></div><div class="mt"></div><div class="flag"></div></div>'+
+                   '<div class="amt"></div><button class="x" aria-label="Quitar">✕</button>';
+      li.querySelector(".nm").textContent = it.name;
+      li.querySelector(".mt").textContent = it.qty+" × "+money(it.price)+" · "+it.code;
+      li.querySelector(".flag").textContent = it.granel ? "Código de tienda" : "";
+      li.querySelector(".amt").textContent = money(it.price*it.qty);
+      li.querySelector(".x").addEventListener("click",()=>{
+        state.items.splice(idx,1); save(); render(); totals();
       });
-      const H = ZXing.DecodeHintType;
-      const hints = new Map();
-      hints.set(H.POSSIBLE_FORMATS, [
-        ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
-        ZXing.BarcodeFormat.UPC_A,  ZXing.BarcodeFormat.UPC_E
-      ]);
-      hints.set(H.TRY_HARDER, true);
-      detector = new ZXing.BrowserMultiFormatReader(hints, 250);
-      engine = "zxing";
-      $("dEngine").textContent = "ZXing (respaldo)";
-      $("dFormats").textContent = "4 de 4 (EAN/UPC)";
-      return true;
-    } catch (_) {
-      $("dEngine").textContent = "No disponible";
-      $("dFormats").textContent = "—";
-      alertEl.innerHTML = '<div class="alert">Este navegador no puede leer códigos y el respaldo no cargó. Prueba en Chrome, o usa la captura manual.</div>';
-      return false;
-    }
+      return li;
+    }));
+    totals();
   }
 
   /* ---------- cámara ---------- */
-  btnStart.addEventListener("click", () => running ? stop() : start());
+  $("btnStart").addEventListener("click", ()=> running? stop():start());
 
-  async function start() {
-    btnStart.disabled = true;
-    btnStart.textContent = "Iniciando…";
-    try {
-      if (!detector && !(await initDetector())) throw new Error("sin motor");
-      const constraints = {
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 }, height: { ideal: 1440 },
-          advanced: [{ focusMode: "continuous" }]
-        },
-        audio: false
-      };
-      running = true;
+  async function start(){
+    const b=$("btnStart"); b.disabled=true; b.textContent="Iniciando…";
+    try{
+      if(!("BarcodeDetector" in window)) throw new Error("nodetector");
+      const sup = await window.BarcodeDetector.getSupportedFormats();
+      const fmt = ["ean_13","ean_8","upc_a","upc_e"].filter(f=>sup.includes(f));
+      if(!fmt.length) throw new Error("nodetector");
+      detector = new window.BarcodeDetector({formats:fmt});
 
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject = stream;
-      await video.play();
-      engine === "zxing" ? loopCrop() : loopNative();
-      track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
-
-      idle.hidden = true; reticle.hidden = false;
-      btnStart.textContent = "Apagar cámara";
-      const caps = track && track.getCapabilities ? track.getCapabilities() : {};
-      btnTorch.disabled = !("torch" in caps);
-    } catch (err) {
-      alertEl.innerHTML = '<div class="alert">No se pudo abrir la cámara: ' + (err && err.name ? err.name : "error") + '. Revisa el permiso de cámara del sitio.</div>';
-      btnStart.textContent = "Encender cámara";
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:960}}, audio:false});
+      video.srcObject=stream; await video.play();
+      track=stream.getVideoTracks()[0];
+      running=true; idle.hidden=true; reticle.hidden=false;
+      b.textContent="Apagar cámara";
+      const caps = track.getCapabilities? track.getCapabilities():{};
+      $("btnTorch").disabled = !("torch" in caps);
+      try{ wake = await navigator.wakeLock.request("screen"); }catch(_){}
+      loop();
+    }catch(err){
+      const msg = err.message==="nodetector"
+        ? "Este navegador no trae lector de códigos. Usa Chrome en Android, o la captura manual."
+        : "No se pudo abrir la cámara ("+(err.name||"error")+"). Revisa el permiso del sitio.";
+      alertEl.innerHTML='<div class="alert">'+msg+'</div>';
+      b.textContent="Encender cámara";
     }
-    btnStart.disabled = false;
+    b.disabled=false;
   }
 
-  function stop() {
-    running = false; torchOn = false;
-    if (zxControls && zxControls.stop) { try { zxControls.stop(); } catch (_) {} }
-    zxControls = null;
-    if (detector && detector.reset) { try { detector.reset(); } catch (_) {} }
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    stream = null; track = null; video.srcObject = null;
-    idle.hidden = false; reticle.hidden = true;
-    btnStart.textContent = "Encender cámara";
-    btnTorch.disabled = true;
+  function stop(){
+    running=false; torchOn=false;
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    stream=null; track=null; video.srcObject=null;
+    idle.hidden=false; reticle.hidden=true;
+    $("btnStart").textContent="Encender cámara"; $("btnTorch").disabled=true;
+    if(wake){ try{ wake.release(); }catch(_){} wake=null; }
   }
 
-  btnTorch.addEventListener("click", async () => {
-    if (!track) return;
-    torchOn = !torchOn;
-    try { await track.applyConstraints({ advanced: [{ torch: torchOn }] }); }
-    catch (_) { btnTorch.disabled = true; }
+  $("btnTorch").addEventListener("click", async ()=>{
+    if(!track) return; torchOn=!torchOn;
+    try{ await track.applyConstraints({advanced:[{torch:torchOn}]}); }
+    catch(_){ $("btnTorch").disabled=true; }
   });
 
-  function loopNative() {
-    const tick = async () => {
-      if (!running) return;
-      try {
-        attempts++; $("dTries").textContent = attempts;
-        const hits = await detector.detect(video);
-        if (hits.length) accept(hits[0].rawValue, hits[0].format);
-      } catch (_) {}
-      setTimeout(tick, 220);
+  function loop(){
+    const tick = async ()=>{
+      if(!running) return;
+      if(!sheet.classList.contains("on")){
+        try{
+          const hits = await detector.detect(video);
+          if(hits.length) confirm2(hits[0].rawValue);
+        }catch(_){}
+      }
+      setTimeout(tick, 180);
     };
     tick();
   }
 
-  // Safari: recorta solo la banda de la mira y la amplía 2x antes de decodificar.
-  // Analizar el cuadro completo desperdicia ciclos en etiqueta borrosa.
-  function loopCrop() {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    const tick = () => {
-      if (!running) return;
-      const vw = video.videoWidth, vh = video.videoHeight;
-      if (vw && vh) {
-        const sw = Math.floor(vw * 0.84), sh = Math.floor(vh * 0.34);
-        const sx = Math.floor((vw - sw) / 2), sy = Math.floor((vh - sh) / 2);
-        canvas.width = sw * 2; canvas.height = sh * 2;
-        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-        attempts++; $("dTries").textContent = attempts;
-        try {
-          const r = detector.decodeFromCanvas(canvas);
-          if (r) accept(r.getText(), String(r.getBarcodeFormat()).toLowerCase());
-        } catch (_) { /* NotFoundException en cada cuadro sin código */ }
+  // exige dos lecturas seguidas del mismo código: mata los falsos positivos
+  function confirm2(code){
+    if(code===seenCode){ seenHits++; } else { seenCode=code; seenHits=1; }
+    if(seenHits<2) return;
+    seenCode=""; seenHits=0;
+    const now=Date.now();
+    if(code===lastAdded && now-lastAddedAt<2500) return;
+    lastAdded=code; lastAddedAt=now;
+    beep();
+    const dup = state.items.find(i=>i.code===code);
+    if(dup){ dup.qty++; save(); render(); return; }
+    openSheet(code);
+  }
+
+  function beep(){
+    if(navigator.vibrate) navigator.vibrate(45);
+    try{
+      const c=new (window.AudioContext||window.webkitAudioContext)();
+      const o=c.createOscillator(), g=c.createGain();
+      o.frequency.value=1180; o.type="square";
+      g.gain.setValueAtTime(.05,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.11);
+      o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.12);
+      setTimeout(()=>c.close(),400);
+    }catch(_){}
+  }
+
+  /* ---------- panel de precio ---------- */
+  function openSheet(code, nameHint){
+    pending={code, name:nameHint||code, granel:/^2/.test(code)&&code.length===13};
+    pQty=1;
+    $("sProd").textContent = pending.name;
+    $("sCode").textContent = code;
+    $("sFlag").innerHTML = pending.granel
+      ? '<div class="alert">Código interno de tienda: el número cambia según el peso. Escribe tú el nombre al exportar.</div>' : "";
+    $("sQty").textContent="1"; $("sPrice").value="";
+    sheet.classList.add("on");
+    setTimeout(()=>{ try{ $("sPrice").focus(); }catch(_){} },120);
+    if(/^\d{8,14}$/.test(code)) lookup(code);
+  }
+  function closeSheet(){ sheet.classList.remove("on"); pending=null; }
+
+  async function lookup(code){
+    try{
+      const r = await fetch("https://world.openfoodfacts.org/api/v2/product/"+encodeURIComponent(code)+
+        ".json?fields=product_name,product_name_es,brands,quantity");
+      const d = r.ok? await r.json():null;
+      const p = d && d.status===1 ? d.product : null;
+      if(p && pending && pending.code===code){
+        const nm=[p.product_name_es||p.product_name||"", p.brands||"", p.quantity||""].filter(Boolean).join(" · ");
+        if(nm){ pending.name=nm; $("sProd").textContent=nm; }
       }
-      setTimeout(tick, 140);
-    };
-    tick();
+    }catch(_){}
   }
 
-  /* ---------- registro ---------- */
-  function accept(code, format) {
-    const now = Date.now();
-    if (code === lastCode && now - lastAt < 3000) return;
-    lastCode = code; lastAt = now;
-    feedback();
-    add(code, format || "—");
-  }
+  $("sPlus").addEventListener("click", ()=>{ pQty++; $("sQty").textContent=pQty; });
+  $("sMinus").addEventListener("click", ()=>{ if(pQty>1){pQty--; $("sQty").textContent=pQty;} });
+  $("sCancel").addEventListener("click", closeSheet);
+  $("sPrice").addEventListener("keydown", e=>{ if(e.key==="Enter") addPending(); });
+  $("sAdd").addEventListener("click", addPending);
 
-  function feedback() {
-    if (navigator.vibrate) navigator.vibrate(45);
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator(), gain = ctx.createGain();
-      osc.frequency.value = 1180; osc.type = "square";
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.11);
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + 0.12);
-      setTimeout(() => ctx.close(), 400);
-    } catch (_) {}
-  }
-
-  function add(code, format) {
-    const entry = {
-      code, format,
-      time: new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      status: "wait", name: ""
-    };
-    entries.unshift(entry);
-    render();
-    lookup(entry);
-  }
-
-  async function lookup(entry) {
-    try {
-      const url = "https://world.openfoodfacts.org/api/v2/product/" +
-        encodeURIComponent(entry.code) +
-        ".json?fields=product_name,product_name_es,brands,quantity";
-      const res = await fetch(url);
-      const data = res.ok ? await res.json() : null;
-      const p = data && data.status === 1 ? data.product : null;
-      if (p) {
-        const parts = [
-          p.product_name_es || p.product_name || "",
-          p.brands || "",
-          p.quantity || ""
-        ].filter(Boolean);
-        entry.status = "ok";
-        entry.name = parts.join(" · ") || "Registrado, sin nombre";
-      } else {
-        entry.status = "miss";
-        entry.name = "No está en Open Food Facts";
-      }
-    } catch (_) {
-      entry.status = "miss";
-      entry.name = "Sin conexión al consultar";
-    }
-    render();
-  }
-
-  function render() {
-    const total = entries.length;
-    const found = entries.filter(e => e.status === "ok").length;
-    const resolved = entries.filter(e => e.status !== "wait").length;
-    $("tTotal").textContent = total;
-    $("tFound").textContent = found;
-    $("tRate").textContent = resolved ? Math.round(found / resolved * 100) + "%" : "—";
-
-    logEmpty.hidden = total > 0;
-    btnCopy.disabled = btnClear.disabled = total === 0;
-
-    logEl.replaceChildren(...entries.map(e => {
-      const li = document.createElement("li");
-      const label = e.status === "ok" ? "En base" : e.status === "miss" ? "Falta" : "Buscando";
-      li.innerHTML =
-        '<div class="line"><span class="code"></span>' +
-        '<span class="stamp ' + e.status + '">' + label + '</span></div>' +
-        '<div class="name"></div>' +
-        '<div class="meta"><span></span><span></span></div>';
-      li.querySelector(".code").textContent = e.code;
-      li.querySelector(".name").textContent = e.name || "…";
-      const meta = li.querySelectorAll(".meta span");
-      meta[0].textContent = e.format;
-      meta[1].textContent = e.time;
-      return li;
-    }));
+  function addPending(){
+    if(!pending) return;
+    const price = parseFloat(String($("sPrice").value).replace(",","."))||0;
+    state.items.unshift({code:pending.code, name:pending.name, price, qty:pQty,
+      granel:pending.granel, at:new Date().toISOString()});
+    save(); render(); closeSheet();
   }
 
   /* ---------- manual ---------- */
-  btnManual.addEventListener("click", submitManual);
-  manual.addEventListener("keydown", e => { if (e.key === "Enter") submitManual(); });
-  function submitManual() {
-    const v = manual.value.replace(/\D/g, "");
-    if (v.length < 6) return;
-    add(v, "manual");
-    manual.value = "";
+  $("btnManual").addEventListener("click", ()=>{
+    const v=$("manual").value.trim(); if(!v) return;
+    openSheet(v, /^\d+$/.test(v)? v : v);
+    $("manual").value="";
+  });
+
+  /* ---------- campos de compra ---------- */
+  $("store").addEventListener("input", e=>{ state.store=e.target.value; save(); });
+  $("budget").addEventListener("input", e=>{ state.budget=e.target.value; save(); totals(); });
+
+  /* ---------- exportar ---------- */
+  function rows(){
+    const head=["fecha","tienda","codigo","producto","cantidad","precio_unit","subtotal"];
+    const body=state.items.map(i=>[i.at, state.store||"", i.code, i.name, i.qty,
+      i.price.toFixed(2), (i.price*i.qty).toFixed(2)]);
+    return [head, ...body];
   }
-
-  /* ---------- salida ---------- */
-  btnCopy.addEventListener("click", async () => {
-    const text = entries.map(e =>
-      [e.time, e.code, e.format, e.status === "ok" ? "SI" : "NO", e.name].join("\t")
-    ).join("\n");
-    try {
-      await navigator.clipboard.writeText(text);
-      btnCopy.textContent = "Copiado";
-      setTimeout(() => btnCopy.textContent = "Copiar bitácora", 1600);
-    } catch (_) {
-      btnCopy.textContent = "No se pudo copiar";
-      setTimeout(() => btnCopy.textContent = "Copiar bitácora", 1600);
-    }
+  $("btnCsv").addEventListener("click", ()=>{
+    const csv = rows().map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="compra-"+new Date().toISOString().slice(0,10)+".csv";
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  });
+  $("btnCopy").addEventListener("click", async ()=>{
+    const t = rows().map(r=>r.join("\t")).join("\n");
+    const b=$("btnCopy");
+    try{ await navigator.clipboard.writeText(t); b.textContent="Copiado"; }
+    catch(_){ b.textContent="No se pudo"; }
+    setTimeout(()=>b.textContent="Copiar",1600);
   });
 
-  btnClear.addEventListener("click", () => {
-    entries.length = 0; lastCode = "";
-    render();
+  $("btnReset").addEventListener("click", ()=>{
+    if(!state.items.length) return;
+    if(!window.confirm("¿Vaciar la compra? Descarga el CSV antes si aún no lo tienes.")) return;
+    state.items=[]; save(); render();
   });
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden && running) stop();
-  });
+  document.addEventListener("visibilitychange", ()=>{ if(document.hidden && running) stop(); });
+  window.addEventListener("beforeunload", save);
 
-  initDetector();
-  render();
+  load(); render();
 })();
 </script>
 </body>
