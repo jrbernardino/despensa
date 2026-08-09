@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14110E">
+<title>Prueba de lectura · Despensa</title>
+<style>
+  :root{
+    --paper:#E9E6DF;
+    --paper-2:#DFDBD2;
+    --ink:#14110E;
+    --muted:#8A857C;
+    --rule:#C6C1B6;
+    --well:#0B0A09;
+    --ok:#1F6B3A;
+    --miss:#B03A1F;
+    --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper-2);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:15px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    padding:14px 12px 40px;
+    display:flex;justify-content:center;
+  }
+  .tape{
+    width:100%;max-width:520px;
+    background:var(--paper);
+    padding:22px 18px 26px;
+    box-shadow:0 1px 0 rgba(0,0,0,.12), 0 10px 30px rgba(0,0,0,.10);
+    position:relative;
+  }
+  /* borde troquelado tipo tira de ticket */
+  .tape::before,.tape::after{
+    content:"";position:absolute;left:0;right:0;height:8px;
+    background:radial-gradient(circle at 5px 0, transparent 0 5px, var(--paper) 5px);
+    background-size:10px 8px;
+  }
+  .tape::before{top:-7px;transform:scaleY(-1)}
+  .tape::after{bottom:-7px}
+
+  header{text-align:center;border-bottom:1px dashed var(--rule);padding-bottom:14px}
+  h1{
+    font-size:15px;font-weight:700;margin:0;
+    letter-spacing:.22em;text-transform:uppercase;
+  }
+  .sub{color:var(--muted);font-size:11.5px;letter-spacing:.08em;margin-top:6px}
+
+  section{border-bottom:1px dashed var(--rule);padding:14px 0}
+  .eyebrow{
+    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:10px;
+  }
+
+  .well{
+    background:var(--well);aspect-ratio:4/3;width:100%;
+    position:relative;overflow:hidden;display:grid;place-items:center;
+  }
+  video{width:100%;height:100%;object-fit:cover;display:block}
+  .reticle{
+    position:absolute;left:8%;right:8%;top:34%;height:32%;
+    border:1px solid rgba(255,255,255,.45);
+    box-shadow:0 0 0 2000px rgba(0,0,0,.30);
+    pointer-events:none;
+  }
+  .reticle span{
+    position:absolute;left:0;right:0;top:50%;height:1px;
+    background:var(--miss);opacity:.9;
+  }
+  .idle{color:#6E6960;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:0 20px;text-align:center}
+
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  button{
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--ink);color:var(--paper);border:1px solid var(--ink);
+    padding:11px 14px;cursor:pointer;flex:1 1 auto;min-height:44px;
+  }
+  button.ghost{background:transparent;color:var(--ink)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button:focus-visible{outline:3px solid var(--miss);outline-offset:2px}
+
+  input{
+    font-family:var(--mono);font-size:15px;padding:11px 12px;flex:2 1 160px;
+    border:1px solid var(--rule);background:#fff;color:var(--ink);min-height:44px;
+  }
+  input:focus-visible{outline:3px solid var(--miss);outline-offset:1px}
+
+  dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:12.5px}
+  dt{color:var(--muted)}
+  dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+
+  .tally{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+  .tally b{display:block;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+  .tally span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+  ol{list-style:none;margin:0;padding:0}
+  li{padding:10px 0;border-bottom:1px dotted var(--rule)}
+  li:last-child{border-bottom:0}
+  .line{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .code{font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+  .stamp{font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:2px 6px;border:1px solid;white-space:nowrap}
+  .stamp.ok{color:var(--ok);border-color:var(--ok)}
+  .stamp.miss{color:var(--miss);border-color:var(--miss)}
+  .stamp.wait{color:var(--muted);border-color:var(--muted)}
+  .meta{color:var(--muted);font-size:11.5px;margin-top:3px;display:flex;justify-content:space-between;gap:10px}
+  .name{font-size:13px;margin-top:3px}
+
+  .empty{color:var(--muted);font-size:12.5px;text-align:center;padding:16px 6px}
+  .note{color:var(--muted);font-size:11.5px;margin-top:10px}
+  footer{text-align:center;padding-top:16px;color:var(--muted);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase}
+  .alert{background:var(--miss);color:#fff;padding:10px 12px;font-size:12.5px;margin-top:10px}
+  @media (prefers-reduced-motion: no-preference){
+    .reticle span{animation:sweep 2.4s ease-in-out infinite}
+    @keyframes sweep{0%,100%{top:12%}50%{top:88%}}
+  }
+</style>
+</head>
+<body>
+<main class="tape">
+
+  <header>
+    <h1>Prueba de lectura</h1>
+    <div class="sub">Scanner EAN · cobertura de catálogo</div>
+  </header>
+
+  <section>
+    <div class="eyebrow">Cámara</div>
+    <div class="well">
+      <video id="video" playsinline muted></video>
+      <div class="reticle" id="reticle" hidden><span></span></div>
+      <div class="idle" id="idle">Cámara apagada</div>
+    </div>
+    <div class="row">
+      <button id="btnStart">Encender cámara</button>
+      <button id="btnTorch" class="ghost" disabled>Luz</button>
+    </div>
+    <div id="alert"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Captura manual</div>
+    <div class="row">
+      <input id="manual" inputmode="numeric" placeholder="7501000110001" autocomplete="off">
+      <button id="btnManual" class="ghost">Buscar</button>
+    </div>
+    <div class="note">Sirve para probar la base de datos sin cámara: teclea el código impreso en el producto.</div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Diagnóstico del equipo</div>
+    <dl>
+      <dt>Origen seguro (HTTPS)</dt><dd id="dSecure">—</dd>
+      <dt>Motor de lectura</dt><dd id="dEngine">—</dd>
+      <dt>Formatos soportados</dt><dd id="dFormats">—</dd>
+    </dl>
+  </section>
+
+  <section>
+    <div class="eyebrow">Resultados</div>
+    <div class="tally">
+      <div><b id="tTotal">0</b><span>Leídos</span></div>
+      <div><b id="tFound">0</b><span>En base</span></div>
+      <div><b id="tRate">—</b><span>Cobertura</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Bitácora</div>
+    <ol id="log"></ol>
+    <div class="empty" id="logEmpty">Escanea un producto para empezar.</div>
+    <div class="row">
+      <button id="btnCopy" class="ghost" disabled>Copiar bitácora</button>
+      <button id="btnClear" class="ghost" disabled>Borrar</button>
+    </div>
+  </section>
+
+  <footer>Prototipo · sin base de datos</footer>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const video = $("video"), idle = $("idle"), reticle = $("reticle");
+  const btnStart = $("btnStart"), btnTorch = $("btnTorch");
+  const btnManual = $("btnManual"), manual = $("manual");
+  const btnCopy = $("btnCopy"), btnClear = $("btnClear");
+  const logEl = $("log"), logEmpty = $("logEmpty"), alertEl = $("alert");
+
+  const WANTED = ["ean_13","ean_8","upc_a","upc_e","code_128","itf"];
+  const entries = [];
+  let stream = null, track = null, detector = null, engine = null;
+  let running = false, torchOn = false;
+  let lastCode = "", lastAt = 0;
+
+  /* ---------- diagnóstico ---------- */
+  $("dSecure").textContent = window.isSecureContext ? "Sí" : "No";
+  if (!window.isSecureContext) {
+    alertEl.innerHTML = '<div class="alert">Esta página no corre en HTTPS, así que el navegador no dará acceso a la cámara. Publícala en GitHub Pages o ábrela desde localhost.</div>';
+  }
+
+  async function initDetector() {
+    if ("BarcodeDetector" in window) {
+      let supported = [];
+      try { supported = await window.BarcodeDetector.getSupportedFormats(); } catch (_) {}
+      const formats = WANTED.filter(f => supported.includes(f));
+      if (formats.length) {
+        detector = new window.BarcodeDetector({ formats });
+        engine = "nativo";
+        $("dEngine").textContent = "BarcodeDetector nativo";
+        $("dFormats").textContent = formats.length + " de " + WANTED.length;
+        return true;
+      }
+    }
+    return loadFallback();
+  }
+
+  async function loadFallback() {
+    $("dEngine").textContent = "Cargando respaldo…";
+    try {
+      await new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+      const hints = new Map();
+      hints.set(2 /* POSSIBLE_FORMATS */, [
+        ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.UPC_A,  ZXing.BarcodeFormat.UPC_E,
+        ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.ITF
+      ]);
+      detector = new ZXing.BrowserMultiFormatReader(hints);
+      engine = "zxing";
+      $("dEngine").textContent = "ZXing (respaldo)";
+      $("dFormats").textContent = "6 de 6";
+      return true;
+    } catch (_) {
+      $("dEngine").textContent = "No disponible";
+      $("dFormats").textContent = "—";
+      alertEl.innerHTML = '<div class="alert">Este navegador no puede leer códigos y el respaldo no cargó. Prueba en Chrome, o usa la captura manual.</div>';
+      return false;
+    }
+  }
+
+  /* ---------- cámara ---------- */
+  btnStart.addEventListener("click", () => running ? stop() : start());
+
+  async function start() {
+    btnStart.disabled = true;
+    btnStart.textContent = "Iniciando…";
+    try {
+      if (!detector && !(await initDetector())) throw new Error("sin motor");
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 960 } },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      track = stream.getVideoTracks()[0];
+
+      running = true;
+      idle.hidden = true; reticle.hidden = false;
+      btnStart.textContent = "Apagar cámara";
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      btnTorch.disabled = !("torch" in caps);
+      engine === "zxing" ? loopZXing() : loopNative();
+    } catch (err) {
+      alertEl.innerHTML = '<div class="alert">No se pudo abrir la cámara: ' + (err && err.name ? err.name : "error") + '. Revisa el permiso de cámara del sitio.</div>';
+      btnStart.textContent = "Encender cámara";
+    }
+    btnStart.disabled = false;
+  }
+
+  function stop() {
+    running = false; torchOn = false;
+    if (engine === "zxing" && detector && detector.reset) detector.reset();
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null; track = null; video.srcObject = null;
+    idle.hidden = false; reticle.hidden = true;
+    btnStart.textContent = "Encender cámara";
+    btnTorch.disabled = true;
+  }
+
+  btnTorch.addEventListener("click", async () => {
+    if (!track) return;
+    torchOn = !torchOn;
+    try { await track.applyConstraints({ advanced: [{ torch: torchOn }] }); }
+    catch (_) { btnTorch.disabled = true; }
+  });
+
+  function loopNative() {
+    const tick = async () => {
+      if (!running) return;
+      try {
+        const hits = await detector.detect(video);
+        if (hits.length) accept(hits[0].rawValue, hits[0].format);
+      } catch (_) {}
+      setTimeout(tick, 220);
+    };
+    tick();
+  }
+
+  function loopZXing() {
+    detector.decodeFromVideoElement(video, (result) => {
+      if (running && result) accept(result.getText(), String(result.getBarcodeFormat()).toLowerCase());
+    }).catch(() => {});
+  }
+
+  /* ---------- registro ---------- */
+  function accept(code, format) {
+    const now = Date.now();
+    if (code === lastCode && now - lastAt < 3000) return;
+    lastCode = code; lastAt = now;
+    feedback();
+    add(code, format || "—");
+  }
+
+  function feedback() {
+    if (navigator.vibrate) navigator.vibrate(45);
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.frequency.value = 1180; osc.type = "square";
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.11);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.12);
+      setTimeout(() => ctx.close(), 400);
+    } catch (_) {}
+  }
+
+  function add(code, format) {
+    const entry = {
+      code, format,
+      time: new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      status: "wait", name: ""
+    };
+    entries.unshift(entry);
+    render();
+    lookup(entry);
+  }
+
+  async function lookup(entry) {
+    try {
+      const url = "https://world.openfoodfacts.org/api/v2/product/" +
+        encodeURIComponent(entry.code) +
+        ".json?fields=product_name,product_name_es,brands,quantity";
+      const res = await fetch(url);
+      const data = res.ok ? await res.json() : null;
+      const p = data && data.status === 1 ? data.product : null;
+      if (p) {
+        const parts = [
+          p.product_name_es || p.product_name || "",
+          p.brands || "",
+          p.quantity || ""
+        ].filter(Boolean);
+        entry.status = "ok";
+        entry.name = parts.join(" · ") || "Registrado, sin nombre";
+      } else {
+        entry.status = "miss";
+        entry.name = "No está en Open Food Facts";
+      }
+    } catch (_) {
+      entry.status = "miss";
+      entry.name = "Sin conexión al consultar";
+    }
+    render();
+  }
+
+  function render() {
+    const total = entries.length;
+    const found = entries.filter(e => e.status === "ok").length;
+    const resolved = entries.filter(e => e.status !== "wait").length;
+    $("tTotal").textContent = total;
+    $("tFound").textContent = found;
+    $("tRate").textContent = resolved ? Math.round(found / resolved * 100) + "%" : "—";
+
+    logEmpty.hidden = total > 0;
+    btnCopy.disabled = btnClear.disabled = total === 0;
+
+    logEl.replaceChildren(...entries.map(e => {
+      const li = document.createElement("li");
+      const label = e.status === "ok" ? "En base" : e.status === "miss" ? "Falta" : "Buscando";
+      li.innerHTML =
+        '<div class="line"><span class="code"></span>' +
+        '<span class="stamp ' + e.status + '">' + label + '</span></div>' +
+        '<div class="name"></div>' +
+        '<div class="meta"><span></span><span></span></div>';
+      li.querySelector(".code").textContent = e.code;
+      li.querySelector(".name").textContent = e.name || "…";
+      const meta = li.querySelectorAll(".meta span");
+      meta[0].textContent = e.format;
+      meta[1].textContent = e.time;
+      return li;
+    }));
+  }
+
+  /* ---------- manual ---------- */
+  btnManual.addEventListener("click", submitManual);
+  manual.addEventListener("keydown", e => { if (e.key === "Enter") submitManual(); });
+  function submitManual() {
+    const v = manual.value.replace(/\D/g, "");
+    if (v.length < 6) return;
+    add(v, "manual");
+    manual.value = "";
+  }
+
+  /* ---------- salida ---------- */
+  btnCopy.addEventListener("click", async () => {
+    const text = entries.map(e =>
+      [e.time, e.code, e.format, e.status === "ok" ? "SI" : "NO", e.name].join("\t")
+    ).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      btnCopy.textContent = "Copiado";
+      setTimeout(() => btnCopy.textContent = "Copiar bitácora", 1600);
+    } catch (_) {
+      btnCopy.textContent = "No se pudo copiar";
+      setTimeout(() => btnCopy.textContent = "Copiar bitácora", 1600);
+    }
+  });
+
+  btnClear.addEventListener("click", () => {
+    entries.length = 0; lastCode = "";
+    render();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && running) stop();
+  });
+
+  initDetector();
+  render();
+})();
+</script>
+</body>
+</html>
