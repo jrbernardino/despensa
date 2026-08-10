@@ -171,3 +171,13 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 - **Pendiente de confirmar por el usuario:** probar "Tomar foto" en un iPhone real
   contra el sitio publicado — es el criterio de aceptación de esta tarea y no se puede
   verificar sin ese dispositivo.
+- **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
+  tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
+  navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo
+  — al modificar `index.html`/`app.js` en esta tarea sin tocar `sw.js`, el shell viejo
+  (cacheado desde la Tarea 4) se siguió sirviendo indefinidamente sin importar lo que
+  hubiera en el servidor. Se corrigió subiendo `CACHE` de `despensa-shell-v1` a
+  `despensa-shell-v2`. **Pendiente para el futuro:** acordarme de subir ese número en
+  cada tarea que toque el shell (`index.html`, `styles.css`, `app.js`,
+  `manifest.webmanifest`, íconos) — es fácil olvidarlo porque `sw.js` mismo casi nunca
+  cambia.
