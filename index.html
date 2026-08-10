@@ -47,6 +47,15 @@
   </section>
 
   <section>
+    <div class="eyebrow">Producto a granel</div>
+    <div class="row" id="granelBotones"></div>
+    <div class="row">
+      <input id="pluManual" inputmode="numeric" placeholder="PLU si no está en la lista" autocomplete="off">
+    </div>
+    <div class="row"><button id="btnPluManual" class="ghost">Agregar por PLU</button></div>
+  </section>
+
+  <section>
     <div class="eyebrow">Artículos</div>
     <ol id="list"></ol>
     <div class="empty" id="listEmpty">Escanea el primer producto.</div>
@@ -76,14 +85,19 @@
     <div id="sFlag"></div>
     <div class="half" style="margin-top:10px">
       <div><label for="sTienda">Tienda</label><input id="sTienda" placeholder="Chedraui" autocomplete="off"></div>
-      <div><label for="sPrice">Precio unitario</label><input id="sPrice" inputmode="decimal" placeholder="0.00"></div>
+      <div><label id="sPriceLabel" for="sPrice">Precio unitario</label><input id="sPrice" inputmode="decimal" placeholder="0.00"></div>
     </div>
-    <div style="margin-top:14px"><label>Cantidad</label>
+    <div style="margin-top:14px" id="sQtyUnidad"><label>Cantidad</label>
       <div class="qty">
         <button id="sMinus" class="ghost">−</button>
         <b id="sQty">1</b>
         <button id="sPlus" class="ghost">+</button>
       </div>
+    </div>
+    <div style="margin-top:14px" id="sQtyPeso" hidden>
+      <label for="sKg">Kilos</label>
+      <input id="sKg" inputmode="decimal" placeholder="0.000">
+      <div class="note" id="sSubtotal"></div>
     </div>
     <div class="row" style="margin-top:16px">
       <button id="sCancel" class="ghost">Cancelar</button>

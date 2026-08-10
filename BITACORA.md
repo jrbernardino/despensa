@@ -213,6 +213,48 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   vez de duplicar la fila. Se probó un subconjunto representativo (no los 20 del caso de
   prueba completo, que incluye productos pesados por PLU sin código de barras —
   eso es la Tarea 7, todavía no construida).
+
+---
+
+## 2026-08-09 · Tarea 7 · Modo pesado / granel · EN CURSO
+
+- **Hallazgo de esquema, confirmado con el usuario:** `Catalogo` solo tiene columna
+  `gtin`, no `cod_tienda`. Un PLU (ej. `40877`) no es un GTIN real — por la regla 2 de
+  `CLAUDE.md` (el PLU solo vale en esa cadena, no es identidad global de producto). Por
+  eso los ítems a granel **nunca** se escriben al `Catalogo` compartido vía
+  `guardarProducto` (a diferencia del patrón de la Tarea 6) ni se buscan contra
+  `buscarProducto`/Open Food Facts — solo se recuerdan en la caché local del teléfono
+  (reutilizando el mismo `catalogoLocal` de la Tarea 6, que es agnóstico al tipo de
+  código).
+- **Nueva sección "Producto a granel"** con dos rutas de alta, ambas confirmadas con el
+  usuario: botones de una lista corta de frecuentes (`Jitomate, Cebolla, Papa, Limón,
+  Aguacate, Plátano, Manzana, Queso, Pechuga de pollo`, editable a mano en `app.js` si no
+  calza con lo real) que abren el panel ya con el nombre puesto, y un campo de PLU
+  manual para lo que no esté en la lista.
+- **Cada pesada es su propia fila** (decisión confirmada): a diferencia de un código de
+  barras, agregar el mismo PLU dos veces no fusiona cantidades — cada pesada es un
+  evento físico distinto con su propio kg y subtotal.
+- **El panel (`#sheet`) ahora tiene modo:** en modo peso, el stepper entero se esconde y
+  se muestra un input decimal de kilos con subtotal en vivo (kg × precio/kg, recalculado
+  en cada tecleo) para verificar antes de confirmar. La etiqueta de precio cambia a
+  "Precio por kilo".
+- **Verificado el caso de aceptación exacto en aritmética real de JS antes de
+  implementar:** `0.195 * 15 = 2.9250000000000003` en punto flotante, pero
+  `toFixed(2)` (la misma función `money()` que ya usa el resto del código) da
+  `"2.93"` correctamente — no hizo falta ninguna librería de precisión decimal nueva.
+  Tracé el flujo completo a mano (PLU manual "40877" → 0.195 kg × $15.00/kg) contra el
+  código final: el subtotal mostrado y el guardado en el ítem coinciden en `$2.93`.
+- Lista/artículo en pantalla ahora distingue formato: los ítems a granel muestran
+  "0.195 kg × $15.00/kg" en vez de "3 × $28.00 · código", con una etiqueta "Granel".
+- `sw.js` subido a `despensa-shell-v4` (index.html/app.js cambiaron).
+- **Verificado sin navegador real** (la extensión de Chrome sigue sin conectar):
+  sintaxis de `app.js`/`sw.js`, la función `slug()` probada por separado contra la lista
+  real de frecuentes (acentos fuera, espacios a guiones), y los tres archivos sirven 200
+  en local.
+- **Pendiente de confirmar por el usuario en dispositivo real:** el flujo completo —
+  tocar un botón de la lista corta, y por separado teclear un PLU a mano — verificando
+  que el caso `40877 · 0.195 kg × $15.00/kg` cuadre en $2.93 tanto en el panel como en la
+  lista de artículos.
 - **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
   tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
   navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo

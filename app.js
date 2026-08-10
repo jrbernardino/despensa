@@ -42,8 +42,10 @@
       li.innerHTML='<div><div class="nm"></div><div class="mt"></div><div class="flag"></div></div>'+
                    '<div class="amt"></div><button class="x" aria-label="Quitar">✕</button>';
       li.querySelector(".nm").textContent = it.name;
-      li.querySelector(".mt").textContent = it.qty+" × "+money(it.price)+" · "+it.code;
-      li.querySelector(".flag").textContent = it.granel ? "Código de tienda" : "";
+      li.querySelector(".mt").textContent = it.peso
+        ? (it.qty.toFixed(3)+" kg × "+money(it.price)+"/kg")
+        : (it.qty+" × "+money(it.price)+" · "+it.code);
+      li.querySelector(".flag").textContent = it.granel ? "Código de tienda" : (it.peso ? "Granel" : "");
       li.querySelector(".amt").textContent = money(it.price*it.qty);
       li.querySelector(".x").addEventListener("click",()=>{
         state.items.splice(idx,1); save(); render(); totals();
@@ -281,24 +283,43 @@
   }
 
   /* ---------- panel de precio ---------- */
-  function openSheet(code, nameHint){
-    const granel = /^2/.test(code) && code.length===13;
-    pending={code, name:nameHint||code, granel, enCatalogo:false};
+  function openSheet(code, nameHint, peso){
+    const granel = !peso && /^2/.test(code) && code.length===13;
+    pending={code, name:nameHint||code, granel, peso:!!peso, enCatalogo:false};
     pQty=1;
     $("sProd").value = pending.name;
     $("sCode").textContent = code;
     $("sTienda").value = $("store").value || "";
     $("sFlag").innerHTML = granel
       ? '<div class="alert">Código interno de tienda: el número cambia según el peso. Escribe tú el nombre.</div>' : "";
-    $("sQty").textContent="1"; $("sPrice").value="";
+
+    $("sPriceLabel").textContent = peso ? "Precio por kilo" : "Precio unitario";
+    $("sQtyUnidad").hidden = !!peso;
+    $("sQtyPeso").hidden = !peso;
+    $("sQty").textContent="1"; $("sPrice").value=""; $("sKg").value="";
+    actualizarSubtotalPeso();
+
     sheet.classList.add("on");
     setTimeout(()=>{
-      try{ (granel ? $("sProd") : $("sPrice")).focus(); }catch(_){}
+      try{ (granel ? $("sProd") : peso ? $("sKg") : $("sPrice")).focus(); }catch(_){}
     },120);
-    // los codigos internos de tienda no sirven como identidad de producto: no se buscan
-    if(!granel && /^\d{8,14}$/.test(code)) resolverProducto(code);
+    // los codigos internos de tienda y los PLU de granel no sirven como identidad de
+    // producto en un catalogo global: ni unos ni otros se buscan en local/remoto/OFF
+    if(!granel && !peso && /^\d{8,14}$/.test(code)) resolverProducto(code);
+    if(peso){
+      const local = catalogoLocal()[code];
+      if(local && local.producto){ pending.name=local.producto; $("sProd").value=local.producto; }
+    }
   }
   function closeSheet(){ sheet.classList.remove("on"); pending=null; }
+
+  function actualizarSubtotalPeso(){
+    const kg = parseFloat(String($("sKg").value).replace(",","."))||0;
+    const precio = parseFloat(String($("sPrice").value).replace(",","."))||0;
+    $("sSubtotal").textContent = (kg>0 && precio>0) ? ("Subtotal: "+money(kg*precio)) : "";
+  }
+  $("sKg").addEventListener("input", actualizarSubtotalPeso);
+  $("sPrice").addEventListener("input", actualizarSubtotalPeso);
 
   // catalogo local -> tu catalogo remoto -> Open Food Facts como semilla (nunca fuente de verdad)
   async function resolverProducto(code){
@@ -349,9 +370,19 @@
     const tienda = ($("sTienda").value||"").trim();
     const p = pending; // se toma antes de closeSheet(), que limpia "pending"
 
-    state.items.unshift({code:p.code, name:nombre, price, qty:pQty,
-      granel:p.granel, tienda, at:new Date().toISOString()});
+    const qty = p.peso ? (parseFloat(String($("sKg").value).replace(",","."))||0) : pQty;
+    if(p.peso && qty<=0) return; // sin kilos capturados todavia, no se agrega
+
+    state.items.unshift({code:p.code, name:nombre, price, qty,
+      granel:p.granel, peso:p.peso, unidad:p.peso?"kg":"", tienda, at:new Date().toISOString()});
     save(); render(); closeSheet();
+
+    if(p.peso){
+      // el PLU no es un GTIN: se recuerda solo en este telefono, nunca al Catalogo compartido
+      catalogoLocalGuardar(p.code, {producto:nombre, marca:"", categoria:"",
+        unidad:"kg", contenido:"", fuente:"granel"});
+      return;
+    }
 
     // el catalogo propio se llena solo con el uso: si no estaba ya en tu catalogo, se sube
     if(!p.granel && !p.enCatalogo){
@@ -372,6 +403,30 @@
     const dup = state.items.find(i=>i.code===v);
     if(dup){ dup.qty++; save(); render(); return; }
     openSheet(v, v);
+  });
+
+  /* ---------- granel (peso): lista corta de frecuentes + PLU manual ---------- */
+  const GRANEL_FRECUENTES = [
+    "Jitomate","Cebolla","Papa","Limón","Aguacate","Plátano","Manzana","Queso","Pechuga de pollo"
+  ];
+  function slug(s){
+    return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+      .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  }
+  (function initGranelBotones(){
+    const cont = $("granelBotones");
+    GRANEL_FRECUENTES.forEach(nombre=>{
+      const b=document.createElement("button");
+      b.className="ghost"; b.textContent=nombre;
+      b.addEventListener("click", ()=> openSheet("granel:"+slug(nombre), nombre, true));
+      cont.appendChild(b);
+    });
+  })();
+
+  $("btnPluManual").addEventListener("click", ()=>{
+    const v=$("pluManual").value.trim(); if(!v) return;
+    $("pluManual").value="";
+    openSheet(v, v, true); // cada pesada es su propia fila: no se busca duplicado
   });
 
   /* ---------- campos de compra ---------- */

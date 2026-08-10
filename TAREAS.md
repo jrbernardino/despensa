@@ -112,7 +112,7 @@ Aceptación: los 20 productos del caso de prueba se capturan sin bloqueos.
 
 ---
 
-### Tarea 7 · Modo pesado / granel · PENDIENTE
+### Tarea 7 · Modo pesado / granel · EN CURSO (falta probar en dispositivo real)
 
 Para frutas, verduras, carnes y quesos que se venden por peso y no traen código de
 barras utilizable. Alta por PLU o por selección de una lista corta de productos
