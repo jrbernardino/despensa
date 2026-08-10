@@ -123,7 +123,7 @@ cuadra al centavo.
 
 ---
 
-### Tarea 8 · Total corriente y presupuesto · EN CURSO (falta probar en dispositivo real)
+### Tarea 8 · Total corriente y presupuesto · HECHO
 
 Encabezado fijo con total, número de artículos, barra de avance contra el presupuesto y
 monto restante. En rojo al excederse. El presupuesto se fija al abrir la compra.

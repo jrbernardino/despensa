@@ -257,7 +257,7 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 
 ---
 
-## 2026-08-09 · Tarea 8 · Total corriente y presupuesto · EN CURSO
+## 2026-08-09 · Tarea 8 · Total corriente y presupuesto · HECHO
 
 - La mayor parte ya existía del prototipo original: encabezado `sticky`, total, conteo
   de artículos, barra de avance contra presupuesto. Dos huecos reales encontrados contra
@@ -280,9 +280,19 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   app de verdad. Ambas dieron `$1,471.93` exacto con el separador de miles correcto —
   es el primer total del proyecto que pasa de 4 cifras.
 - `sw.js` subido a `despensa-shell-v5` (app.js/styles.css cambiaron).
-- **Pendiente de confirmar por el usuario en dispositivo real:** que el texto "Excedido"
-  se vea en rojo al pasarse del presupuesto, y que el campo Presupuesto quede bloqueado
-  tras agregar el primer artículo (y se libere otra vez tras "Cerrar y vaciar").
+- **Confirmado por el usuario:** los tres puntos (bloqueo del presupuesto, texto
+  "Excedido" en rojo, liberación al vaciar) funcionan correctamente.
+- **Bug de caché del PWA en iPhone, no del código:** el usuario reportó que no veía
+  ningún cambio ("no pasa eso") pese a cerrar y reabrir la app varias veces. Se aisló
+  probando en una pestaña privada (sin service worker previo) — ahí sí funcionaba todo,
+  confirmando que el código estaba bien y el problema era el service worker viejo
+  atorado en la app instalada del iPhone. A diferencia del bug de la Tarea 5 (que se
+  arregló con cerrar/reabrir dos veces), esta vez ni eso bastó — hubo que **borrar el
+  ícono de la app y reinstalarla desde cero** ("Agregar a pantalla de inicio" otra vez).
+  Aparentemente iOS Safari puede quedarse pegado a una versión del service worker de
+  forma más persistente que Android Chrome. **Nota para futuras tareas:** si el usuario
+  reporta "no veo cambios" después de un deploy, antes de asumir un bug de lógica,
+  descartar caché probando en una pestaña privada primero.
 - **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
   tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
   navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo
