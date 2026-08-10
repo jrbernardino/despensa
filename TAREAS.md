@@ -72,7 +72,7 @@ Aceptación: enviar el mismo payload tres veces deja exactamente un juego de fil
 
 ## FASE 2 — PWA de captura
 
-### Tarea 4 · Estructura base y manifest · EN CURSO (falta confirmar en Android)
+### Tarea 4 · Estructura base y manifest · HECHO
 
 `index.html` + `app.js` + `styles.css` + `manifest.webmanifest` + `sw.js`.
 La app debe instalarse desde "Agregar a pantalla de inicio" con ícono propio y arrancar

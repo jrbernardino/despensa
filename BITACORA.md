@@ -92,7 +92,7 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 
 ---
 
-## 2026-08-09 · Tarea 4 · Estructura base y manifest · EN CURSO
+## 2026-08-09 · Tarea 4 · Estructura base y manifest · HECHO
 
 - `index.html` se partió en `index.html` + `styles.css` + `app.js` (contenido extraído
   programáticamente, sin cambios de lógica) + `manifest.webmanifest` + `sw.js` nuevos.
@@ -122,7 +122,7 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   manifest es JSON válido, `app.js`/`sw.js` pasan `node --check`, y los seis archivos
   del shell responden 200 con el content-type correcto sirviendo el sitio local con
   `python3 -m http.server`.
-- **Pendiente de confirmar por el usuario** (no se puede probar sin un teléfono real):
-  instalar desde "Agregar a pantalla de inicio" en Android, que abra sin barra de
-  navegador, y que cargue en modo avión tras la primera visita. La tarea se marca
-  `EN CURSO` hasta esa confirmación.
+- **Confirmado por el usuario en Android real** (2026-08-09, sobre
+  https://jrbernardino.github.io/despensa/): instala desde "Agregar a pantalla de
+  inicio" con el ícono de barras correcto, abre sin barra de navegador, y en modo avión
+  carga el shell (vacío, sin poder escanear — esperado, solo cachea la cáscara).
