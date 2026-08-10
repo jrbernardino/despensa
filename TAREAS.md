@@ -82,7 +82,7 @@ Aceptación: instalada en Android, abre sin barra de navegador y carga en modo a
 
 ---
 
-### Tarea 5 · Escáner con doble ruta · EN CURSO (falta confirmar en iOS)
+### Tarea 5 · Escáner con doble ruta · HECHO
 
 - Si existe `BarcodeDetector`: video continuo, ciclo cada ~180 ms.
 - Si no existe: modo foto fija con ZXing sobre la imagen (`decodeFromCanvas`),

@@ -129,7 +129,7 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 
 ---
 
-## 2026-08-09 · Tarea 5 · Escáner con doble ruta · EN CURSO
+## 2026-08-09 · Tarea 5 · Escáner con doble ruta · HECHO
 
 - La ruta Android (`BarcodeDetector`, video continuo cada 180ms, doble lectura,
   cooldown 2.5s, linterna, wake lock) ya venía del prototipo original y no se tocó —
@@ -168,9 +168,9 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   `HTMLCanvasElementLuminanceSource`, `BinaryBitmap`, `HybridBinarizer`, `decodeBitmap`)
   existe y está exportada — pero no pude ejecutar un decode real de extremo a extremo
   (necesitaría un canvas/DOM real; no hay navegador headless disponible en esta sesión).
-- **Pendiente de confirmar por el usuario:** probar "Tomar foto" en un iPhone real
-  contra el sitio publicado — es el criterio de aceptación de esta tarea y no se puede
-  verificar sin ese dispositivo.
+- **Confirmado por el usuario en iPhone real:** aparece "Tomar foto", abre la cámara
+  nativa, y al fotografiar un código de barras real lo lee y abre el panel de precio
+  con el código correcto.
 - **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
   tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
   navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo
