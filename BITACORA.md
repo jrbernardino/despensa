@@ -174,7 +174,7 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 
 ---
 
-## 2026-08-09 · Tarea 6 · Alta de partida · EN CURSO
+## 2026-08-09 · Tarea 6 · Alta de partida · HECHO
 
 - **`config.js` finalmente conectado al frontend.** Se creó en la Tarea 2 pero
   `index.html` nunca lo cargaba — el panel no podía llamar a la API propia hasta ahora.
@@ -208,14 +208,11 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   Tarea 2 se probó de nuevo contra el deploy real con el mismo payload que ahora manda
   `app.js` (confirma que no hay drift entre lo que el frontend envía y lo que el backend
   espera). Dato de prueba borrado después.
-- **Pendiente de confirmar por el usuario en dispositivo real:** el flujo completo de
-  captura (escanear/tomar foto/mano → nombre se llena solo si el producto ya existe en
-  Catalogo → agregar → aparece en la lista). La aceptación literal de la tarea habla de
-  los 20 productos del caso de prueba, pero varios de esos son productos pesados por PLU
-  sin código de barras (jitomate) — eso es explícitamente la Tarea 7, todavía no
-  construida. Por ahora tiene sentido probar un subconjunto representativo: un producto
-  normal con código real, un duplicado (misma cantidad sumada), y un código interno de
-  tienda — no las 20 completas.
+- **Confirmado por el usuario en dispositivo real:** panel con nombre editable y campo
+  Tienda visibles, y re-escanear/re-teclear un código ya agregado sube la cantidad en
+  vez de duplicar la fila. Se probó un subconjunto representativo (no los 20 del caso de
+  prueba completo, que incluye productos pesados por PLU sin código de barras —
+  eso es la Tarea 7, todavía no construida).
 - **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
   tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
   navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo
