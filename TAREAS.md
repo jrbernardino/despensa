@@ -60,7 +60,7 @@ filas sin sobrescribir nada.
 
 ---
 
-### Tarea 3 · Idempotencia en la escritura · PENDIENTE
+### Tarea 3 · Idempotencia en la escritura · HECHO
 
 El celular puede reintentar un envío tras perder señal. Cada partida lleva un
 `partida_id` generado en el cliente (UUID). `guardarCompra` ignora los IDs ya presentes

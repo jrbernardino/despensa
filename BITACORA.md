@@ -64,3 +64,28 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
    por error un spreadsheet nuevo en vez de vincularse al existente; quedó identificado,
    mandado a la papelera de Drive (recuperable) y corregido usando `--parentId` sin
    `--type`.
+
+---
+
+## 2026-08-09 · Tarea 3 · Idempotencia en la escritura · HECHO
+
+- `guardarCompra_` ahora exige `compra_id` y `partida_id` en el payload (ya no hay
+  fallback a `Utilities.getUuid()` del lado servidor) — sin un ID fijo generado por el
+  cliente, un reintento no se puede distinguir de una compra nueva.
+- Antes de escribir la cabecera: si ya existe una fila en `Compras` con ese `compra_id`,
+  no se vuelve a insertar. Antes de escribir cada partida: se arma un set de
+  `partida_id` ya existentes en `Partidas` y solo se agregan las que faltan — esto cubre
+  no solo el reintento completo, sino también el caso de una señal perdida a medio envío
+  (algunas partidas del intento anterior ya escritas, otras no).
+- La respuesta agrega el campo `partidas_agregadas` (cuántas partidas de esa llamada se
+  insertaron de verdad), útil para depurar reintentos sin romper el contrato de la
+  Tarea 2.
+- **Probado contra el deploy real:** mismo payload de `guardarCompra` (2 partidas)
+  enviado 3 veces seguidas por `curl`. Resultado: `partidas_agregadas` fue 2, luego 0, 0.
+  Verificado además contando filas directamente: exactamente 1 fila en `Compras` y 2 en
+  `Partidas` para ese `compra_id`, pese a los tres envíos. Datos de prueba borrados
+  después con una acción temporal (igual que en la Tarea 2).
+- **Efecto colateral no relacionado, resuelto en el camino:** Node había desaparecido de
+  Homebrew a mitad de esta tarea (posible efecto secundario de instalar `gh` para el
+  push de la Tarea 2), lo que rompió `clasp`. Se reinstaló con `brew install node` con
+  permiso explícito del usuario antes de continuar.

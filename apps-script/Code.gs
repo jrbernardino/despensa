@@ -92,13 +92,18 @@ function texto_(v) {
   return s ? "'" + s : '';
 }
 
-/* ---------- guardarCompra ---------- */
+/* ---------- guardarCompra (idempotente por compra_id / partida_id) ---------- */
 function guardarCompra_(body) {
   var compra = body.compra || {};
   var partidas = body.partidas || [];
   if (!partidas.length) throw new Error('compra sin partidas');
 
-  var compraId = compra.compra_id || Utilities.getUuid();
+  var compraId = compra.compra_id;
+  if (!compraId) throw new Error('compra_id requerido');
+  partidas.forEach(function (p) {
+    if (!p.partida_id) throw new Error('partida_id requerido en cada partida');
+  });
+
   var fecha = compra.fecha || isoAhora_().slice(0, 10);
   var creadoEn = isoAhora_();
 
@@ -108,16 +113,28 @@ function guardarCompra_(body) {
     return s + sub;
   }, 0);
 
-  hoja_(HOJAS.COMPRAS).appendRow([
-    compraId, fecha, compra.presupuesto || '', total, compra.notas || '', creadoEn
-  ]);
+  // idempotencia de la cabecera: un reintento con el mismo compra_id no duplica la fila
+  var comprasT = tabla_(HOJAS.COMPRAS);
+  var compraYaExiste = comprasT.filas.some(function (f) { return String(f.compra_id) === String(compraId); });
+  if (!compraYaExiste) {
+    comprasT.sh.appendRow([
+      compraId, fecha, compra.presupuesto || '', total, compra.notas || '', creadoEn
+    ]);
+  }
 
-  var shPartidas = hoja_(HOJAS.PARTIDAS);
+  // idempotencia por partida: cubre tambien el caso de una senal perdida a medio envio,
+  // donde algunas partidas de un intento anterior ya quedaron escritas y otras no
+  var partidasT = tabla_(HOJAS.PARTIDAS);
+  var idsExistentes = {};
+  partidasT.filas.forEach(function (f) { idsExistentes[String(f.partida_id)] = true; });
+
+  var agregadas = 0;
   partidas.forEach(function (p) {
+    if (idsExistentes[String(p.partida_id)]) return; // ya escrita en un intento previo, se ignora
     var sub = (p.subtotal != null) ? Number(p.subtotal)
       : Number(p.precio_cobrado || 0) * Number(p.cantidad || 0);
-    shPartidas.appendRow([
-      p.partida_id || Utilities.getUuid(),
+    partidasT.sh.appendRow([
+      p.partida_id,
       compraId,
       p.fecha || fecha,
       p.tienda || '',
@@ -132,9 +149,10 @@ function guardarCompra_(body) {
       p.promo || '',
       creadoEn
     ]);
+    agregadas++;
   });
 
-  return { ok: true, compra_id: compraId, total: total };
+  return { ok: true, compra_id: compraId, total: total, partidas_agregadas: agregadas };
 }
 
 /* ---------- buscarProducto ---------- */
