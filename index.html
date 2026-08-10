@@ -71,11 +71,13 @@
 
 <div class="sheet" id="sheet">
   <div class="card">
-    <div class="prod" id="sProd">—</div>
+    <input class="prod" id="sProd" placeholder="Nombre del producto" autocomplete="off">
     <div class="barcode" id="sCode">—</div>
     <div id="sFlag"></div>
-    <label for="sPrice">Precio unitario</label>
-    <input id="sPrice" inputmode="decimal" placeholder="0.00">
+    <div class="half" style="margin-top:10px">
+      <div><label for="sTienda">Tienda</label><input id="sTienda" placeholder="Chedraui" autocomplete="off"></div>
+      <div><label for="sPrice">Precio unitario</label><input id="sPrice" inputmode="decimal" placeholder="0.00"></div>
+    </div>
     <div style="margin-top:14px"><label>Cantidad</label>
       <div class="qty">
         <button id="sMinus" class="ghost">−</button>
@@ -90,6 +92,7 @@
   </div>
 </div>
 
+<script src="./config.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>

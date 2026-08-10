@@ -252,32 +252,88 @@
     }catch(_){}
   }
 
+  /* ---------- catalogo local (semilla hasta que exista IndexedDB, Tarea 9) ---------- */
+  const CAT_KEY = "despensa.catalogo.v1";
+  function catalogoLocal(){
+    try{ return JSON.parse(localStorage.getItem(CAT_KEY)) || {}; }catch(_){ return {}; }
+  }
+  function catalogoLocalGuardar(gtin, producto){
+    try{
+      const c = catalogoLocal();
+      c[gtin] = producto;
+      localStorage.setItem(CAT_KEY, JSON.stringify(c));
+    }catch(_){}
+  }
+
+  /* ---------- API propia (Apps Script) ---------- */
+  async function apiPost(accion, datos){
+    const cfg = window.DESPENSA_CONFIG;
+    if(!cfg || !cfg.API_URL) return null;
+    try{
+      const r = await fetch(cfg.API_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain"}, // evita el preflight OPTIONS que Apps Script no maneja
+        body: JSON.stringify(Object.assign({token:cfg.TOKEN, accion}, datos))
+      });
+      if(!r.ok) return null;
+      return await r.json();
+    }catch(_){ return null; }
+  }
+
   /* ---------- panel de precio ---------- */
   function openSheet(code, nameHint){
-    pending={code, name:nameHint||code, granel:/^2/.test(code)&&code.length===13};
+    const granel = /^2/.test(code) && code.length===13;
+    pending={code, name:nameHint||code, granel, enCatalogo:false};
     pQty=1;
-    $("sProd").textContent = pending.name;
+    $("sProd").value = pending.name;
     $("sCode").textContent = code;
-    $("sFlag").innerHTML = pending.granel
-      ? '<div class="alert">Código interno de tienda: el número cambia según el peso. Escribe tú el nombre al exportar.</div>' : "";
+    $("sTienda").value = $("store").value || "";
+    $("sFlag").innerHTML = granel
+      ? '<div class="alert">Código interno de tienda: el número cambia según el peso. Escribe tú el nombre.</div>' : "";
     $("sQty").textContent="1"; $("sPrice").value="";
     sheet.classList.add("on");
-    setTimeout(()=>{ try{ $("sPrice").focus(); }catch(_){} },120);
-    if(/^\d{8,14}$/.test(code)) lookup(code);
+    setTimeout(()=>{
+      try{ (granel ? $("sProd") : $("sPrice")).focus(); }catch(_){}
+    },120);
+    // los codigos internos de tienda no sirven como identidad de producto: no se buscan
+    if(!granel && /^\d{8,14}$/.test(code)) resolverProducto(code);
   }
   function closeSheet(){ sheet.classList.remove("on"); pending=null; }
 
-  async function lookup(code){
+  // catalogo local -> tu catalogo remoto -> Open Food Facts como semilla (nunca fuente de verdad)
+  async function resolverProducto(code){
+    const local = catalogoLocal()[code];
+    if(local){ aplicarProducto(code, local, true); return; }
+
+    const remoto = await apiPost("buscarProducto", {gtin:code});
+    if(remoto && remoto.ok && remoto.producto){
+      aplicarProducto(code, remoto.producto, true);
+      catalogoLocalGuardar(code, remoto.producto);
+      return;
+    }
+
     try{
       const r = await fetch("https://world.openfoodfacts.org/api/v2/product/"+encodeURIComponent(code)+
         ".json?fields=product_name,product_name_es,brands,quantity");
       const d = r.ok? await r.json():null;
       const p = d && d.status===1 ? d.product : null;
-      if(p && pending && pending.code===code){
+      if(p){
         const nm=[p.product_name_es||p.product_name||"", p.brands||"", p.quantity||""].filter(Boolean).join(" · ");
-        if(nm){ pending.name=nm; $("sProd").textContent=nm; }
+        if(nm) aplicarProducto(code, {producto:nm, marca:p.brands||"", categoria:"",
+          unidad:"", contenido:p.quantity||"", fuente:"off"}, false);
       }
     }catch(_){}
+  }
+
+  // enCatalogo=true cuando el hit viene de tu propio catalogo (local o remoto): ya no
+  // hace falta volver a escribirlo. false cuando es semilla de OFF o el usuario lo tecleo.
+  function aplicarProducto(code, producto, enCatalogo){
+    if(!pending || pending.code!==code) return;
+    if(producto.producto){ pending.name=producto.producto; $("sProd").value=producto.producto; }
+    pending.marca=producto.marca||""; pending.categoria=producto.categoria||"";
+    pending.unidad=producto.unidad||""; pending.contenido=producto.contenido||"";
+    pending.fuente=producto.fuente||"";
+    pending.enCatalogo=enCatalogo;
   }
 
   $("sPlus").addEventListener("click", ()=>{ pQty++; $("sQty").textContent=pQty; });
@@ -289,16 +345,33 @@
   function addPending(){
     if(!pending) return;
     const price = parseFloat(String($("sPrice").value).replace(",","."))||0;
-    state.items.unshift({code:pending.code, name:pending.name, price, qty:pQty,
-      granel:pending.granel, at:new Date().toISOString()});
+    const nombre = ($("sProd").value||"").trim() || pending.code; // el nombre nunca queda vacio
+    const tienda = ($("sTienda").value||"").trim();
+    const p = pending; // se toma antes de closeSheet(), que limpia "pending"
+
+    state.items.unshift({code:p.code, name:nombre, price, qty:pQty,
+      granel:p.granel, tienda, at:new Date().toISOString()});
     save(); render(); closeSheet();
+
+    // el catalogo propio se llena solo con el uso: si no estaba ya en tu catalogo, se sube
+    if(!p.granel && !p.enCatalogo){
+      apiPost("guardarProducto", {producto:{
+        gtin:p.code, producto:nombre, marca:p.marca||"", categoria:p.categoria||"",
+        unidad:p.unidad||"", contenido:p.contenido||"", fuente:p.fuente||"app"
+      }}).then(res=>{
+        if(res && res.ok) catalogoLocalGuardar(p.code, {producto:nombre, marca:p.marca||"",
+          categoria:p.categoria||"", unidad:p.unidad||"", contenido:p.contenido||"", fuente:"app"});
+      });
+    }
   }
 
   /* ---------- manual ---------- */
   $("btnManual").addEventListener("click", ()=>{
     const v=$("manual").value.trim(); if(!v) return;
-    openSheet(v, /^\d+$/.test(v)? v : v);
     $("manual").value="";
+    const dup = state.items.find(i=>i.code===v);
+    if(dup){ dup.qty++; save(); render(); return; }
+    openSheet(v, v);
   });
 
   /* ---------- campos de compra ---------- */
@@ -308,7 +381,7 @@
   /* ---------- exportar ---------- */
   function rows(){
     const head=["fecha","tienda","codigo","producto","cantidad","precio_unit","subtotal"];
-    const body=state.items.map(i=>[i.at, state.store||"", i.code, i.name, i.qty,
+    const body=state.items.map(i=>[i.at, i.tienda||state.store||"", i.code, i.name, i.qty,
       i.price.toFixed(2), (i.price*i.qty).toFixed(2)]);
     return [head, ...body];
   }

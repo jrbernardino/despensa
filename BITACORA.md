@@ -171,6 +171,51 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 - **Confirmado por el usuario en iPhone real:** aparece "Tomar foto", abre la cámara
   nativa, y al fotografiar un código de barras real lo lee y abre el panel de precio
   con el código correcto.
+
+---
+
+## 2026-08-09 · Tarea 6 · Alta de partida · EN CURSO
+
+- **`config.js` finalmente conectado al frontend.** Se creó en la Tarea 2 pero
+  `index.html` nunca lo cargaba — el panel no podía llamar a la API propia hasta ahora.
+  Se agregó también al precache de `sw.js` (subido a `despensa-shell-v3`, aprendiendo de
+  el bug de caché de la Tarea 5: si toco el shell, subo el número).
+- **Cadena de búsqueda real:** catálogo local (nuevo, `localStorage` bajo
+  `despensa.catalogo.v1` — interino hasta que exista IndexedDB en la Tarea 9) → tu
+  catálogo remoto (`buscarProducto`) → Open Food Facts como semilla. El primer hit llena
+  el nombre; los hits de remoto/OFF se guardan en la caché local para que la próxima vez
+  ese código resuelva instantáneo y sin señal.
+- **Escritura de vuelta al catálogo compartido** (decisión confirmada con el usuario):
+  al tocar "Agregar", si la partida no venía ya de tu catálogo (ni local ni remoto) —
+  o sea, es semilla de OFF o el usuario la tecleó a mano — se llama `guardarProducto` en
+  paralelo, sin bloquear el guardado de la partida si falla. Así el catálogo "se llena
+  solo con el uso", como describe `CLAUDE.md`. Los códigos internos de tienda (empiezan
+  con 2, 13 dígitos) se saltan toda la cadena de búsqueda y nunca se escriben a
+  `Catalogo`, como ya establecía la regla existente.
+- **Panel editable:** `#sProd` pasó de `<div>` a `<input>` (mismo estilo visual,
+  `input.prod` con más especificidad que la regla genérica de `input`). Se agregó un
+  campo "Tienda" al panel (precargado del campo global de la compra, editable por
+  partida) — hasta ahora la tienda solo existía a nivel de toda la compra, pese a que
+  `CLAUDE.md` ya documentaba que es atributo de la partida. El CSV (`rows()`) ahora usa
+  la tienda de cada ítem si existe, con fallback al campo global.
+- Para códigos internos de tienda, el foco al abrir el panel va al nombre (hay que
+  escribirlo) en vez del precio.
+- **Captura manual ahora también incrementa cantidad** en duplicados, igual que el modo
+  escáner — antes solo el escáner lo hacía, la captura a mano siempre abría el panel
+  como si fuera nuevo.
+- **Verificado:** sintaxis de `app.js`/`sw.js`, manifest sigue válido, los cinco archivos
+  del shell sirven 200 en local. El contrato `buscarProducto`/`guardarProducto` de la
+  Tarea 2 se probó de nuevo contra el deploy real con el mismo payload que ahora manda
+  `app.js` (confirma que no hay drift entre lo que el frontend envía y lo que el backend
+  espera). Dato de prueba borrado después.
+- **Pendiente de confirmar por el usuario en dispositivo real:** el flujo completo de
+  captura (escanear/tomar foto/mano → nombre se llena solo si el producto ya existe en
+  Catalogo → agregar → aparece en la lista). La aceptación literal de la tarea habla de
+  los 20 productos del caso de prueba, pero varios de esos son productos pesados por PLU
+  sin código de barras (jitomate) — eso es explícitamente la Tarea 7, todavía no
+  construida. Por ahora tiene sentido probar un subconjunto representativo: un producto
+  normal con código real, un duplicado (misma cantidad sumada), y un código interno de
+  tienda — no las 20 completas.
 - **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
   tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
   navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo

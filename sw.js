@@ -1,12 +1,13 @@
 // Cache del shell para que la app abra sin señal (Tarea 4).
 // Subir este numero cuando cambie cualquier archivo del shell.
-const CACHE = "despensa-shell-v2";
+const CACHE = "despensa-shell-v3";
 
 const SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./config.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

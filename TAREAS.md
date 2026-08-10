@@ -98,7 +98,7 @@ existe la salida manual.
 
 ---
 
-### Tarea 6 · Alta de partida · PENDIENTE
+### Tarea 6 · Alta de partida · EN CURSO (falta probar en dispositivo real)
 
 Al aceptar un código: buscar en `Catalogo` local, luego en el remoto, luego en Open Food
 Facts como semilla. Panel de captura con nombre editable, precio, cantidad y tienda.
