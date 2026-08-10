@@ -25,12 +25,17 @@
     $("tTotal").textContent = money(t);
     $("tCount").textContent = n + (n===1?" artículo":" artículos");
     const b = parseFloat(String(state.budget).replace(",","."))||0;
-    const bar=$("bar");
+    const bar=$("bar"), tLeft=$("tLeft");
     if(b>0){
       const pct=Math.min(t/b*100,100);
-      bar.style.width=pct+"%"; bar.classList.toggle("over", t>b);
-      $("tLeft").textContent = (t>b? "Excedido "+money(t-b) : "Restan "+money(b-t));
-    } else { bar.style.width="0"; $("tLeft").textContent=""; }
+      const excedido = t>b;
+      bar.style.width=pct+"%"; bar.classList.toggle("over", excedido);
+      tLeft.textContent = excedido ? "Excedido "+money(t-b) : "Restan "+money(b-t);
+      tLeft.classList.toggle("over", excedido);
+    } else { bar.style.width="0"; tLeft.textContent=""; tLeft.classList.remove("over"); }
+
+    // el presupuesto se fija al abrir la compra: una vez que hay artículos, ya no se toca
+    $("budget").disabled = state.items.length>0;
   }
 
   /* ---------- lista ---------- */

@@ -21,6 +21,7 @@
   .bar i{display:block;height:100%;background:var(--ok);width:0}
   .bar i.over{background:var(--miss)}
   .subline{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px}
+  .subline .over{color:var(--miss);font-weight:700}
 
   section{border-bottom:1px dashed var(--rule);padding:14px 0}
   .eyebrow{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
@@ -39,6 +40,7 @@
   button.ghost{background:transparent;color:var(--ink)}
   button.danger{background:transparent;color:var(--miss);border-color:var(--miss)}
   button:disabled{opacity:.35}
+  input:disabled{opacity:.5}
   button:focus-visible{outline:3px solid var(--miss);outline-offset:2px}
   input{font-family:var(--mono);font-size:16px;padding:12px;border:1px solid var(--rule);
     background:#fff;color:var(--ink);min-height:46px;width:100%}

@@ -254,6 +254,35 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 - **Confirmado por el usuario en dispositivo real:** probadas ambas rutas de entrada
   (botón de la lista corta y PLU manual) — el caso `0.195 kg × $15.00/kg` cuadra en
   $2.93.
+
+---
+
+## 2026-08-09 · Tarea 8 · Total corriente y presupuesto · EN CURSO
+
+- La mayor parte ya existía del prototipo original: encabezado `sticky`, total, conteo
+  de artículos, barra de avance contra presupuesto. Dos huecos reales encontrados contra
+  el texto de la tarea:
+  1. **"En rojo al excederse" solo pintaba la barra, no el texto** "Excedido $X" (se
+     quedaba en gris `--muted` de siempre). Se agregó `.subline .over{color:var(--miss)}`
+     y se togglea la clase en `#tLeft` igual que ya se hacía en la barra.
+  2. **El presupuesto no se fijaba al abrir la compra** — era editable en cualquier
+     momento. Confirmado con el usuario: se bloquea (`disabled`) en cuanto hay al menos
+     un artículo en la compra, y se vuelve a poder editar solo si se vacía con
+     "Cerrar y vaciar". Se agregó `input:disabled{opacity:.5}` para que se note
+     visualmente que está bloqueado.
+- **Verificación del caso de aceptación ($1,471.93 en dos tiendas):** no tengo el
+  desglose real de los 26 productos de la compra de prueba, y recapturarlos a mano no
+  tiene caso — eso es literalmente el trabajo de la Tarea 13 (todavía no construida).
+  En su lugar, probé en Node la misma lógica de suma y formato (`money()`) con dos
+  simulaciones: (a) los dos subtotales agregados por tienda (Walmart $1,242.93 +
+  Pollería $229.00), y (b) 26 partidas individuales sintéticas que suman lo mismo, para
+  descartar arrastre de error de punto flotante al sumar montos uno por uno como hace la
+  app de verdad. Ambas dieron `$1,471.93` exacto con el separador de miles correcto —
+  es el primer total del proyecto que pasa de 4 cifras.
+- `sw.js` subido a `despensa-shell-v5` (app.js/styles.css cambiaron).
+- **Pendiente de confirmar por el usuario en dispositivo real:** que el texto "Excedido"
+  se vea en rojo al pasarse del presupuesto, y que el campo Presupuesto quede bloqueado
+  tras agregar el primer artículo (y se libere otra vez tras "Cerrar y vaciar").
 - **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
   tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
   navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo
