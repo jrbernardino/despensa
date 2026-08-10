@@ -89,3 +89,40 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   Homebrew a mitad de esta tarea (posible efecto secundario de instalar `gh` para el
   push de la Tarea 2), lo que rompió `clasp`. Se reinstaló con `brew install node` con
   permiso explícito del usuario antes de continuar.
+
+---
+
+## 2026-08-09 · Tarea 4 · Estructura base y manifest · EN CURSO
+
+- `index.html` se partió en `index.html` + `styles.css` + `app.js` (contenido extraído
+  programáticamente, sin cambios de lógica) + `manifest.webmanifest` + `sw.js` nuevos.
+- **Rutas relativas en todo:** no hay `CNAME` en el repo, así que GitHub Pages
+  probablemente sirve desde `jrbernardino.github.io/despensa/` (subpath, no raíz). Se
+  usó `./` en manifest (`start_url`, `scope`), íconos, `sw.js` y su registro para que no
+  se rompa en ese subpath.
+- `display: "standalone"` (no `fullscreen`) — decisión confirmada con el usuario: mejor
+  soporte cross-device, coincide con el criterio de aceptación ("sin barra de
+  navegador") sin ocultar la barra de estado del sistema.
+- **Íconos generados sin dependencias externas:** no había PIL/ImageMagick en la
+  máquina; se escribió un generador de PNG puro con `zlib`+`struct` de stdlib
+  (`gen_icons.py`, no versionado — vivió en el scratchpad). Diseño: fondo `--ink`
+  (#14110E) con barras verticales tipo código de barras en `--paper` (#E9E6DF),
+  coherente con la estética de recibo/monospace existente y con el escáner como función
+  central. Salidas: `icons/icon-192.png`, `icons/icon-512.png`,
+  `icons/apple-touch-icon.png` (180px), `icons/favicon-32.png`.
+- `sw.js`: cachea el shell (`index.html`, `styles.css`, `app.js`, manifest, íconos) en
+  `install`, cache-first con fallback a red para esos archivos same-origin, limpia
+  caches viejos en `activate`. Las llamadas cross-origin (Open Food Facts, la API de
+  Apps Script) se dejan pasar sin interceptar — no se cachean, para no servir precios o
+  productos obsoletos.
+- Metadatos iOS agregados en `<head>` (`apple-mobile-web-app-capable`,
+  `apple-mobile-web-app-title`, `apple-touch-icon`) porque Safari no lee el manifest
+  para eso.
+- **Verificado sin navegador real** (la extensión de Chrome no conectó en esta sesión):
+  manifest es JSON válido, `app.js`/`sw.js` pasan `node --check`, y los seis archivos
+  del shell responden 200 con el content-type correcto sirviendo el sitio local con
+  `python3 -m http.server`.
+- **Pendiente de confirmar por el usuario** (no se puede probar sin un teléfono real):
+  instalar desde "Agregar a pantalla de inicio" en Android, que abra sin barra de
+  navegador, y que cargue en modo avión tras la primera visita. La tarea se marca
+  `EN CURSO` hasta esa confirmación.
