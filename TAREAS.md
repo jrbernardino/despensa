@@ -132,7 +132,7 @@ Aceptación: los totales cuadran contra el caso de prueba ($1,471.93 en dos tien
 
 ---
 
-### Tarea 9 · Persistencia local y sincronización · PENDIENTE
+### Tarea 9 · Persistencia local y sincronización · EN CURSO (falta probar en dispositivo real)
 
 Toda la compra vive en IndexedDB y se guarda en cada cambio. Botón explícito de
 "Cerrar compra" que envía a Sheets. Si falla el envío, la compra queda marcada como

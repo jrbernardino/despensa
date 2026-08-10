@@ -20,6 +20,10 @@
     <div class="total"><span>Total</span><b id="tTotal">$0.00</b></div>
     <div class="bar"><i id="bar"></i></div>
     <div class="subline"><span id="tCount">0 artículos</span><span id="tLeft"></span></div>
+    <div class="pending" id="avisoPendientes" hidden>
+      <span class="txt"></span>
+      <button id="btnReintentar" class="ghost">Reintentar</button>
+    </div>
   </div>
 
   <section>
@@ -71,8 +75,12 @@
       <button id="btnCsv" class="ghost">Descargar CSV</button>
       <button id="btnCopy" class="ghost">Copiar</button>
     </div>
-    <div class="row"><button id="btnReset" class="danger">Cerrar y vaciar</button></div>
-    <div class="note">Todo se guarda solo en este teléfono, en cada cambio. Puedes cerrar la pestaña sin perder nada.</div>
+    <div class="row">
+      <button id="btnCerrar">Cerrar compra</button>
+      <button id="btnDescartar" class="danger">Descartar</button>
+    </div>
+    <div class="note">Todo se guarda solo en este teléfono, en cada cambio. Puedes cerrar la pestaña sin perder nada.
+      "Cerrar compra" la manda a tu Sheet; si no hay señal, queda pendiente y se reintenta sola.</div>
   </section>
 
   <footer>Captura de compra · v1</footer>

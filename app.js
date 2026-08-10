@@ -1,20 +1,96 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const KEY = "despensa.compra.v1";
+  const KEY_VIEJA = "despensa.compra.v1"; // localStorage previo a la Tarea 9, solo para migrar una vez
   const video=$("video"), idle=$("idle"), reticle=$("reticle"), alertEl=$("alert");
   const sheet=$("sheet");
 
-  let state = { store:"", budget:"", items:[] };
+  let state = { compra_id:"", store:"", budget:"", items:[], estado:"abierta" };
   let detector=null, stream=null, track=null, running=false, torchOn=false, wake=null;
   let seenCode="", seenHits=0, lastAdded="", lastAddedAt=0;
   let pending=null, pQty=1;
 
-  /* ---------- persistencia ---------- */
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(_){} }
-  function load(){
-    try{ const r=localStorage.getItem(KEY); if(r) state=Object.assign(state, JSON.parse(r)); }catch(_){}
-    $("store").value=state.store||""; $("budget").value=state.budget||"";
+  function uuid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c=>{
+      const r=Math.random()*16|0, v=c==="x"?r:(r&0x3|0x8);
+      return v.toString(16);
+    });
+  }
+
+  /* ---------- persistencia: IndexedDB (Tarea 9) ---------- */
+  const DB_NOMBRE="despensa", DB_VERSION=1, ALMACEN="compras";
+
+  function dbAbrir(){
+    return new Promise((resolve, reject)=>{
+      const req = indexedDB.open(DB_NOMBRE, DB_VERSION);
+      req.onupgradeneeded = ()=>{
+        if(!req.result.objectStoreNames.contains(ALMACEN)){
+          const os = req.result.createObjectStore(ALMACEN, {keyPath:"compra_id"});
+          os.createIndex("estado", "estado", {unique:false});
+        }
+      };
+      req.onsuccess = ()=> resolve(req.result);
+      req.onerror = ()=> reject(req.error);
+    });
+  }
+  function dbPut(compra){
+    return dbAbrir().then(db=> new Promise((resolve,reject)=>{
+      const req = db.transaction(ALMACEN,"readwrite").objectStore(ALMACEN).put(compra);
+      req.onsuccess=()=>resolve(compra); req.onerror=()=>reject(req.error);
+    }));
+  }
+  function dbBorrar(compra_id){
+    return dbAbrir().then(db=> new Promise((resolve,reject)=>{
+      const req = db.transaction(ALMACEN,"readwrite").objectStore(ALMACEN).delete(compra_id);
+      req.onsuccess=()=>resolve(); req.onerror=()=>reject(req.error);
+    }));
+  }
+  function dbTodas(){
+    return dbAbrir().then(db=> new Promise((resolve,reject)=>{
+      const req = db.transaction(ALMACEN,"readonly").objectStore(ALMACEN).getAll();
+      req.onsuccess=()=>resolve(req.result||[]); req.onerror=()=>reject(req.error);
+    }));
+  }
+
+  function nuevaCompra(base){
+    return {
+      compra_id: uuid(),
+      fecha: new Date().toISOString().slice(0,10),
+      store: (base && base.store) || "",
+      budget: (base && base.budget) || "",
+      notas: "",
+      items: (base && Array.isArray(base.items))
+        ? base.items.map(it=> Object.assign({partida_id: it.partida_id||uuid()}, it))
+        : [],
+      estado: "abierta",
+      creado_en: new Date().toISOString(),
+      intentos: 0
+    };
+  }
+
+  function save(){ dbPut(state).catch(()=>{}); }
+
+  // recupera la compra abierta si existe; si no, migra la de localStorage (Tareas 6-8,
+  // previas a IndexedDB) una sola vez, o arranca una compra nueva en blanco
+  async function cargarEstadoInicial(){
+    let abierta = null;
+    try{ abierta = (await dbTodas()).find(c=>c.estado==="abierta") || null; }catch(_){}
+
+    if(!abierta){
+      let vieja = null;
+      try{
+        const r = localStorage.getItem(KEY_VIEJA);
+        if(r){ const v=JSON.parse(r); if(v && Array.isArray(v.items) && v.items.length) vieja=v; }
+      }catch(_){}
+      abierta = nuevaCompra(vieja);
+      try{ await dbPut(abierta); }catch(_){}
+      try{ localStorage.removeItem(KEY_VIEJA); }catch(_){}
+    }
+
+    state = abierta;
+    $("store").value = state.store||"";
+    $("budget").value = state.budget||"";
   }
 
   /* ---------- totales ---------- */
@@ -378,7 +454,7 @@
     const qty = p.peso ? (parseFloat(String($("sKg").value).replace(",","."))||0) : pQty;
     if(p.peso && qty<=0) return; // sin kilos capturados todavia, no se agrega
 
-    state.items.unshift({code:p.code, name:nombre, price, qty,
+    state.items.unshift({partida_id:uuid(), code:p.code, name:nombre, price, qty,
       granel:p.granel, peso:p.peso, unidad:p.peso?"kg":"", tienda, at:new Date().toISOString()});
     save(); render(); closeSheet();
 
@@ -461,11 +537,95 @@
     setTimeout(()=>b.textContent="Copiar",1600);
   });
 
-  $("btnReset").addEventListener("click", ()=>{
+  /* ---------- cerrar compra: envia a Sheets, con reintento si falla ---------- */
+
+  // codigos de barras reales -> gtin; codigos internos de tienda y PLU de granel -> cod_tienda
+  // (ninguno de los dos es identidad global de producto, ver reglas de CLAUDE.md)
+  function partidaAPayload(it){
+    const esCodigoTienda = it.granel || it.peso;
+    return {
+      partida_id: it.partida_id,
+      tienda: it.tienda || state.store || "",
+      gtin: esCodigoTienda ? "" : it.code,
+      cod_tienda: esCodigoTienda ? it.code : "",
+      producto: it.name,
+      cantidad: it.qty,
+      unidad: it.unidad || "",
+      precio_anaquel: it.price,
+      precio_cobrado: it.price, // la conciliacion contra ticket es la Tarea 10
+      subtotal: Number((it.price*it.qty).toFixed(2)),
+      promo: ""
+    };
+  }
+
+  async function enviarCompra(compra){
+    const resp = await apiPost("guardarCompra", {
+      compra: { compra_id:compra.compra_id, fecha:compra.fecha,
+        presupuesto:compra.budget||"", notas:compra.notas||"" },
+      partidas: compra.items.map(partidaAPayload)
+    });
+    return !!(resp && resp.ok);
+  }
+
+  function empezarCompraNueva(){
+    state = nuevaCompra(null);
+    dbPut(state).catch(()=>{});
+    $("store").value=""; $("budget").value="";
+    render();
+  }
+
+  $("btnCerrar").addEventListener("click", async ()=>{
     if(!state.items.length) return;
-    if(!window.confirm("¿Vaciar la compra? Descarga el CSV antes si aún no lo tienes.")) return;
-    state.items=[]; save(); render();
+    if(!window.confirm("¿Cerrar esta compra y enviarla a tu Sheet?")) return;
+
+    const compra = state;
+    compra.estado = "pendiente"; // por si el envio falla o la app se cierra a medias
+    await dbPut(compra).catch(()=>{});
+
+    let ok=false;
+    try{ ok = await enviarCompra(compra); }catch(_){ ok=false; }
+
+    compra.intentos = (compra.intentos||0) + (ok?0:1);
+    compra.estado = ok ? "sincronizada" : "pendiente";
+    if(ok) compra.sincronizada_en = new Date().toISOString();
+    await dbPut(compra).catch(()=>{});
+
+    empezarCompraNueva();
+    actualizarAvisoPendientes();
   });
+
+  $("btnDescartar").addEventListener("click", async ()=>{
+    if(!state.items.length) return;
+    if(!window.confirm("¿Descartar esta compra sin enviarla? Se pierde todo lo capturado.")) return;
+    try{ await dbBorrar(state.compra_id); }catch(_){}
+    empezarCompraNueva();
+  });
+
+  async function reintentarPendientes(){
+    let todas=[];
+    try{ todas = await dbTodas(); }catch(_){ return; }
+    const pendientes = todas.filter(c=>c.estado==="pendiente");
+    for(const c of pendientes){
+      let ok=false;
+      try{ ok = await enviarCompra(c); }catch(_){ ok=false; }
+      if(ok){
+        c.estado="sincronizada"; c.sincronizada_en=new Date().toISOString();
+        await dbPut(c).catch(()=>{});
+      }
+    }
+    actualizarAvisoPendientes();
+  }
+
+  async function actualizarAvisoPendientes(){
+    let n=0;
+    try{ n=(await dbTodas()).filter(c=>c.estado==="pendiente").length; }catch(_){}
+    const el=$("avisoPendientes");
+    el.hidden = n===0;
+    if(n>0) el.querySelector(".txt").textContent =
+      (n===1? "1 compra pendiente de enviar" : n+" compras pendientes de enviar");
+  }
+  $("btnReintentar").addEventListener("click", reintentarPendientes);
+  window.addEventListener("online", reintentarPendientes);
 
   document.addEventListener("visibilitychange", ()=>{ if(document.hidden && running) stop(); });
   window.addEventListener("beforeunload", save);
@@ -477,5 +637,11 @@
     });
   }
 
-  load(); render(); initEscaner();
+  (async function iniciar(){
+    await cargarEstadoInicial();
+    render();
+    initEscaner();
+    actualizarAvisoPendientes();
+    reintentarPendientes();
+  })();
 })();

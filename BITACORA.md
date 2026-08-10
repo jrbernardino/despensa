@@ -282,6 +282,75 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 - `sw.js` subido a `despensa-shell-v5` (app.js/styles.css cambiaron).
 - **Confirmado por el usuario:** los tres puntos (bloqueo del presupuesto, texto
   "Excedido" en rojo, liberación al vaciar) funcionan correctamente.
+
+---
+
+## 2026-08-09 · Tarea 9 · Persistencia local y sincronización · EN CURSO
+
+- **Hallazgo grande antes de empezar:** `guardarCompra` nunca se había llamado desde el
+  frontend en ninguna tarea anterior. Todo lo capturado hasta la Tarea 8 vivía solo en
+  `localStorage`, sin `compra_id` ni `partida_id` por ítem, y "Cerrar y vaciar" solo
+  borraba la lista local sin mandar nada a Sheets. Esta tarea es la primera integración
+  real cliente-servidor para el flujo de compra completo.
+- **Migración de modelo:** `localStorage` (`despensa.compra.v1`) reemplazado por
+  IndexedDB (base `despensa`, almacén `compras`, `keyPath: compra_id`). Cada compra es
+  un registro con `estado`: `abierta | pendiente | sincronizada`. El catálogo local de
+  la Tarea 6 se queda en `localStorage` — fuera de alcance de esta tarea.
+  - Migración silenciosa de datos viejos: si no hay ninguna compra `abierta` en
+    IndexedDB y sí hay algo en la clave vieja de `localStorage`, se importa una vez como
+    la compra actual (con `partida_id` nuevo para los ítems que no lo tenían) y se borra
+    la clave vieja.
+- **Decisiones confirmadas con el usuario:** se mantiene un botón "Descartar" aparte de
+  "Cerrar compra" (para tirar una compra sin enviarla, ej. tienda equivocada); las
+  compras ya sincronizadas se quedan en IndexedDB como historial local (no se borran),
+  sentando base para el historial de precios de la Tarea 11 sin trabajo extra.
+- **Botón "Cerrar compra":** arma el payload real (`compra` + `partidas`) y llama
+  `guardarCompra`. Mapeo `gtin`/`cod_tienda` según el tipo de ítem (mismo criterio que
+  ya usan las Tareas 6-7): código de barras real → `gtin`; código interno de tienda o
+  PLU de granel → `cod_tienda`, `gtin` vacío — ninguno de esos dos es identidad global
+  de producto. Si el envío falla, la compra queda `pendiente` en IndexedDB; en cualquier
+  caso (éxito o falla) arranca una compra nueva en blanco de inmediato, para no dejar al
+  usuario esperando.
+- **Reintento automático:** al abrir la app y al evento `online` del navegador, se
+  reintentan todas las compras `pendiente`. La idempotencia de la Tarea 3 (`compra_id` +
+  `partida_id` estables) hace que reintentar de más nunca duplique filas.
+- **Aviso visible de pendientes:** banner bajo el encabezado si hay compras sin
+  sincronizar, con botón "Reintentar ahora" — se usó un estilo neutro nuevo (`.pending`)
+  en vez de reusar `.alert` (rojo), porque "pendiente, se reintentará sola" no es un
+  estado de error.
+- **Bug encontrado y corregido antes de desplegar:** el `subtotal` se mandaba sin
+  redondear (`2.9250000000000003`, mismo artefacto de punto flotante que en la Tarea 7)
+  — el backend usa el subtotal que mande el cliente tal cual si viene en el payload, así
+  que se habría escrito sucio en la hoja. Se corrigió con
+  `Number((it.price*it.qty).toFixed(2))`.
+- **Verificación real, no solo revisión de código** (esta tarea toca persistencia — el
+  riesgo de perder datos del usuario es real):
+  1. Copié el bloque exacto de IndexedDB de `app.js` (no una reescritura aproximada) a
+     un entorno Node aislado con `fake-indexeddb`, fuera del repo, y corrí 9 escenarios:
+     arranque en frío, recarga a media compra (no debe perder nada), cierre en modo
+     avión (queda pendiente, la compra nueva sigue separada), detección de pendientes
+     para reintento, reintento exitoso con historial conservado, migración desde
+     `localStorage` viejo (incluyendo asignar `partida_id` a ítems que no lo tenían), y
+     que no vuelva a migrar ni duplique en un segundo arranque. Las nueve pasaron contra
+     el código real.
+  2. Probé el mapeo `partidaAPayload` con los tres tipos de ítem (código de barras,
+     código interno de tienda, PLU de granel) y confirmé `gtin`/`cod_tienda` correctos
+     en cada caso.
+  3. Probé el payload completo de `enviarCompra` contra el deploy real de Apps Script,
+     dos veces seguidas (simulando un reintento) — la segunda vez `partidas_agregadas:0`,
+     confirmando que la idempotencia de la Tarea 3 protege este flujo nuevo también.
+     Datos de prueba borrados después.
+- `sw.js` subido a `despensa-shell-v6`.
+- **Pendiente de confirmar por el usuario en dispositivo real** (esto sí necesita el
+  teléfono — no se puede simular el ciclo real de modo avión/reconexión):
+  1. Agregar artículos, cerrar la pestaña o la app a media compra, reabrir — nada se
+     pierde y sigue siendo la misma compra.
+  2. Con el teléfono en modo avión: agregar artículos, tocar "Cerrar compra" — debe
+     aparecer el aviso de "1 compra pendiente" y arrancar una compra nueva en blanco.
+  3. Quitar modo avión — la compra pendiente debe sincronizarse sola (o via el botón
+     "Reintentar" si el evento `online` no dispara), el aviso debe desaparecer, y los
+     datos deben aparecer en el Sheet real.
+  4. Probar también "Descartar" con artículos capturados por error.
 - **Bug de caché del PWA en iPhone, no del código:** el usuario reportó que no veía
   ningún cambio ("no pasa eso") pese a cerrar y reabrir la app varias veces. Se aisló
   probando en una pestaña privada (sin service worker previo) — ahí sí funcionaba todo,
