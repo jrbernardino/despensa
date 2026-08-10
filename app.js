@@ -53,16 +53,33 @@
     totals();
   }
 
-  /* ---------- cámara ---------- */
+  /* ---------- cámara: modo video (Android/Chrome, BarcodeDetector) ---------- */
+  let modoFoto = false;
+
+  // decide una vez al cargar si hay BarcodeDetector con los formatos que nos sirven;
+  // si no, esconde el botón de video y muestra "Tomar foto" en su lugar
+  async function initEscaner(){
+    let ok = false;
+    try{
+      if("BarcodeDetector" in window){
+        const sup = await window.BarcodeDetector.getSupportedFormats();
+        ok = ["ean_13","ean_8","upc_a","upc_e"].some(f=>sup.includes(f));
+      }
+    }catch(_){}
+    modoFoto = !ok;
+    $("btnStart").hidden = modoFoto;
+    $("btnTorch").hidden = modoFoto;
+    $("btnPhoto").hidden = !modoFoto;
+    if(modoFoto) idle.textContent = "Toca «Tomar foto» para escanear";
+  }
+
   $("btnStart").addEventListener("click", ()=> running? stop():start());
 
   async function start(){
     const b=$("btnStart"); b.disabled=true; b.textContent="Iniciando…";
     try{
-      if(!("BarcodeDetector" in window)) throw new Error("nodetector");
       const sup = await window.BarcodeDetector.getSupportedFormats();
       const fmt = ["ean_13","ean_8","upc_a","upc_e"].filter(f=>sup.includes(f));
-      if(!fmt.length) throw new Error("nodetector");
       detector = new window.BarcodeDetector({formats:fmt});
 
       stream = await navigator.mediaDevices.getUserMedia({
@@ -76,10 +93,7 @@
       try{ wake = await navigator.wakeLock.request("screen"); }catch(_){}
       loop();
     }catch(err){
-      const msg = err.message==="nodetector"
-        ? "Este navegador no trae lector de códigos. Usa Chrome en Android, o la captura manual."
-        : "No se pudo abrir la cámara ("+(err.name||"error")+"). Revisa el permiso del sitio.";
-      alertEl.innerHTML='<div class="alert">'+msg+'</div>';
+      alertEl.innerHTML='<div class="alert">No se pudo abrir la cámara ('+(err.name||"error")+'). Revisa el permiso del sitio.</div>';
       b.textContent="Encender cámara";
     }
     b.disabled=false;
@@ -99,6 +113,103 @@
     try{ await track.applyConstraints({advanced:[{torch:torchOn}]}); }
     catch(_){ $("btnTorch").disabled=true; }
   });
+
+  /* ---------- cámara: modo foto (iOS/Safari, sin BarcodeDetector) ----------
+   * Safari no enfoca a corta distancia en video continuo (ver CLAUDE.md). La ruta que
+   * funciona es <input type=file capture=environment>: abre la cámara nativa con toque
+   * para enfocar, y decodificamos la foto resultante con ZXing.
+   */
+  let zxingCargando = null;
+  function cargarZXing(){
+    if(window.ZXing) return Promise.resolve(window.ZXing);
+    if(zxingCargando) return zxingCargando;
+    zxingCargando = new Promise((resolve, reject)=>{
+      const s=document.createElement("script");
+      s.src="./vendor/zxing.min.js";
+      s.onload=()=>resolve(window.ZXing);
+      s.onerror=()=>reject(new Error("no se pudo cargar el lector"));
+      document.head.appendChild(s);
+    });
+    return zxingCargando;
+  }
+
+  // reimplementa "decodeFromCanvas" (no existe en la version vendorizada de la
+  // libreria) a partir de las piezas de bajo nivel que si expone
+  function decodeFromCanvas_(reader, canvas, ZX){
+    const fuente = new ZX.HTMLCanvasElementLuminanceSource(canvas);
+    const bitmap = new ZX.BinaryBitmap(new ZX.HybridBinarizer(fuente));
+    return reader.decodeBitmap(bitmap);
+  }
+
+  function dibujarEnCanvas(img, maxLado){
+    let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+    if(Math.max(w,h) > maxLado){
+      const esc = maxLado/Math.max(w,h);
+      w=Math.round(w*esc); h=Math.round(h*esc);
+    }
+    const c=document.createElement("canvas");
+    c.width=w; c.height=h;
+    c.getContext("2d").drawImage(img,0,0,w,h);
+    return c;
+  }
+
+  // segundo intento: recorte central al 50%, ampliado 2x
+  function recorteCentral2x(canvas){
+    const cw=Math.round(canvas.width*0.5), ch=Math.round(canvas.height*0.5);
+    const cx=Math.round((canvas.width-cw)/2), cy=Math.round((canvas.height-ch)/2);
+    const out=document.createElement("canvas");
+    out.width=cw*2; out.height=ch*2;
+    out.getContext("2d").drawImage(canvas, cx,cy,cw,ch, 0,0,cw*2,ch*2);
+    return out;
+  }
+
+  $("btnPhoto").addEventListener("click", ()=> $("fileCam").click());
+
+  $("fileCam").addEventListener("change", async (e)=>{
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(file) procesarFoto(file);
+  });
+
+  async function procesarFoto(file){
+    const b=$("btnPhoto"); b.disabled=true; b.textContent="Leyendo…";
+    alertEl.innerHTML="";
+    try{
+      const ZX = await cargarZXing();
+      const hints = new Map();
+      hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS,
+        [ZX.BarcodeFormat.EAN_13, ZX.BarcodeFormat.EAN_8, ZX.BarcodeFormat.UPC_A, ZX.BarcodeFormat.UPC_E]);
+      hints.set(ZX.DecodeHintType.TRY_HARDER, true);
+      const reader = new ZX.BrowserMultiFormatReader(hints);
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      try{
+        await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=url; });
+      } finally { URL.revokeObjectURL(url); }
+
+      const base = dibujarEnCanvas(img, 1600);
+      let resultado=null;
+      try{ resultado = decodeFromCanvas_(reader, base, ZX); }
+      catch(_){
+        try{ resultado = decodeFromCanvas_(reader, recorteCentral2x(base), ZX); }
+        catch(_){ resultado=null; }
+      }
+
+      if(resultado){
+        const code = resultado.getText();
+        beep();
+        const dup = state.items.find(i=>i.code===code);
+        if(dup){ dup.qty++; save(); render(); }
+        else openSheet(code);
+      } else {
+        alertEl.innerHTML='<div class="alert">No se pudo leer el código en la foto. Intenta de nuevo o usa la captura manual.</div>';
+      }
+    }catch(err){
+      alertEl.innerHTML='<div class="alert">No se pudo procesar la foto. Intenta de nuevo o usa la captura manual.</div>';
+    }
+    b.disabled=false; b.textContent="Tomar foto";
+  }
 
   function loop(){
     const tick = async ()=>{
@@ -233,5 +344,5 @@
     });
   }
 
-  load(); render();
+  load(); render(); initEscaner();
 })();

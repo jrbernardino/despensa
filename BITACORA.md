@@ -126,3 +126,48 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   https://jrbernardino.github.io/despensa/): instala desde "Agregar a pantalla de
   inicio" con el ícono de barras correcto, abre sin barra de navegador, y en modo avión
   carga el shell (vacío, sin poder escanear — esperado, solo cachea la cáscara).
+
+---
+
+## 2026-08-09 · Tarea 5 · Escáner con doble ruta · EN CURSO
+
+- La ruta Android (`BarcodeDetector`, video continuo cada 180ms, doble lectura,
+  cooldown 2.5s, linterna, wake lock) ya venía del prototipo original y no se tocó —
+  ya estaba validada en campo el 2026-08-09 con 18 productos reales (ver sección
+  "Lectura de códigos" en `CLAUDE.md`).
+- **Nueva ruta iOS/Safari (modo foto):** `initEscaner()` corre una vez al cargar,
+  detecta si `BarcodeDetector` existe con formatos usables; si no, esconde
+  "Encender cámara"/"Luz" y muestra "Tomar foto" en su lugar, que dispara un
+  `<input type="file" accept="image/*" capture="environment">` (la única ruta que
+  funciona en Safari, según `CLAUDE.md` — abre la cámara nativa con toque para
+  enfocar).
+- **`@zxing/library` 0.21.3 vendorizada** en `vendor/zxing.min.js` (336KB), no CDN:
+  el `sw.js` de la Tarea 4 no cachea peticiones cross-origin a propósito, así que un
+  CDN nunca quedaría disponible offline. Se carga perezosamente (inyección de
+  `<script>` dinámica) solo cuando `initEscaner()` detecta que hace falta — Android con
+  Chrome nunca la descarga.
+- **`decodeFromCanvas` no existe en la build vendorizada** (`TAREAS.md` lo nombra, pero
+  no está en ninguna versión publicada que encontré). Se reconstruyó el mismo
+  comportamiento con las piezas de bajo nivel que sí expone la librería:
+  `HTMLCanvasElementLuminanceSource` → `HybridBinarizer` → `BinaryBitmap` →
+  `reader.decodeBitmap(...)`. Verificado por grep contra el bundle que las cuatro clases
+  están exportadas antes de escribir el código contra ellas.
+- Flujo: foto → canvas con downscale a máx. 1600px de lado largo → intento de decode →
+  si falla, recorte central al 50%, ampliado 2x, segundo intento → si ambos fallan,
+  mensaje de error y queda la opción de repetir o usar la captura manual (ya existía).
+  Hints restringidos a EAN-13/EAN-8/UPC-A/UPC-E, igual que la ruta Android, más
+  `TRY_HARDER` (aceptable en foto única, no en video continuo).
+- **Doble lectura no aplica al modo foto** — se interpretó "doble lectura obligatoria en
+  el modo continuo" (texto literal de la tarea) como exclusivo del modo video: una foto
+  ya es una acción deliberada, no un stream con falsos positivos.
+- **Verificado sin navegador real** (la extensión de Chrome sigue sin conectar en esta
+  sesión): `node --check` en `app.js`, manifest sigue válido, los tres archivos nuevos
+  (incluyendo `vendor/zxing.min.js`) sirven 200 en las rutas relativas correctas contra
+  un servidor local. Confirmé por grep contra el bundle que cada clase/método de ZXing
+  que uso (`BrowserMultiFormatReader`, `DecodeHintType`, `BarcodeFormat`,
+  `HTMLCanvasElementLuminanceSource`, `BinaryBitmap`, `HybridBinarizer`, `decodeBitmap`)
+  existe y está exportada — pero no pude ejecutar un decode real de extremo a extremo
+  (necesitaría un canvas/DOM real; no hay navegador headless disponible en esta sesión).
+- **Pendiente de confirmar por el usuario:** probar "Tomar foto" en un iPhone real
+  contra el sitio publicado — es el criterio de aceptación de esta tarea y no se puede
+  verificar sin ese dispositivo.
