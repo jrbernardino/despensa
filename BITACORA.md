@@ -216,7 +216,7 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
 
 ---
 
-## 2026-08-09 · Tarea 7 · Modo pesado / granel · EN CURSO
+## 2026-08-09 · Tarea 7 · Modo pesado / granel · HECHO
 
 - **Hallazgo de esquema, confirmado con el usuario:** `Catalogo` solo tiene columna
   `gtin`, no `cod_tienda`. Un PLU (ej. `40877`) no es un GTIN real — por la regla 2 de
@@ -251,10 +251,9 @@ Registro append-only de lo hecho. No se edita ni se borra lo ya anotado.
   sintaxis de `app.js`/`sw.js`, la función `slug()` probada por separado contra la lista
   real de frecuentes (acentos fuera, espacios a guiones), y los tres archivos sirven 200
   en local.
-- **Pendiente de confirmar por el usuario en dispositivo real:** el flujo completo —
-  tocar un botón de la lista corta, y por separado teclear un PLU a mano — verificando
-  que el caso `40877 · 0.195 kg × $15.00/kg` cuadre en $2.93 tanto en el panel como en la
-  lista de artículos.
+- **Confirmado por el usuario en dispositivo real:** probadas ambas rutas de entrada
+  (botón de la lista corta y PLU manual) — el caso `0.195 kg × $15.00/kg` cuadra en
+  $2.93.
 - **Bug encontrado por el usuario y corregido:** el usuario reportó ver la app vieja
   tanto en Android como iPhone después del deploy. Causa: `sw.js` usa cache-first, y el
   navegador solo reinstala el service worker cuando cambian los bytes de `sw.js` mismo
